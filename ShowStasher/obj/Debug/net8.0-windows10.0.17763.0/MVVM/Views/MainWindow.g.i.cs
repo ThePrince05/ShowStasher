@@ -55,7 +55,7 @@ namespace ShowStasher {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ShowStasher;component/mvvm/views/mainwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ShowStasher;V1.0.0.0;component/mvvm/views/mainwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\MVVM\Views\MainWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

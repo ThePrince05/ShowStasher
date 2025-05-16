@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShowStasher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7dba27a473427d8d3ce75b6efd19008853057cf5")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShowStasher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShowStasher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

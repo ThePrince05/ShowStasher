@@ -17,6 +17,7 @@ namespace ShowStasher.MVVM.Models
         public string PosterUrl { get; set; }
         public int? Season { get; set; }
         public int? Episode { get; set; }
+        public string EpisodeTitle { get; set; }
     }
 
 }
