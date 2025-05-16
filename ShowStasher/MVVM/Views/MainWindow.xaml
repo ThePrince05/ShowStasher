@@ -1,0 +1,52 @@
+﻿<Window x:Class="ShowStasher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ShowStasher"
+        xmlns:vm="clr-namespace:ShowStasher.MVVM.ViewModels"
+        Title="ShowStasher" Height="500" Width="600"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+    
+        <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Folder selection -->
+        <TextBlock Text="Source Folder:" FontWeight="Bold" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,25,0,10">
+            <TextBox Text="{Binding SourcePath}" IsReadOnly="True" Width="380" Margin="0,0,10,0"/>
+            <Button Content="Browse" Command="{Binding BrowseSourceCommand}" Width="80"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Text="Destination Folder:" FontWeight="Bold" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,25,0,10">
+            <TextBox Text="{Binding DestinationPath}" IsReadOnly="True" Width="380" Margin="0,0,10,0"
+                     TextChanged="TextBox_TextChanged" />
+            <Button Content="Browse" Command="{Binding BrowseDestinationCommand}" Width="80"/>
+        </StackPanel>
+
+        <!-- Organize -->
+        <Button Grid.Row="2" Content="Organize Files" Command="{Binding OrganizeFilesCommand}"
+                Width="150" Height="40" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+
+        <!-- Status -->
+        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Foreground="DarkGreen" Margin="0,10,0,10"/>
+
+        <!-- Logs -->
+        <GroupBox Header="Log Output" Grid.Row="4" Margin="0,10,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Height="200">
+                <ListBox ItemsSource="{Binding LogMessages}" FontFamily="Consolas" FontSize="12"/>
+            </ScrollViewer>
+        </GroupBox>
+    </Grid>
+    
+</Window>
