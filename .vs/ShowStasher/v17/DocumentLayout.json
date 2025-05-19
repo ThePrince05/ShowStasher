@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "D:\\Projects\\Visual Studio\\ShowStasher\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\tmdbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\tmdbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\helpers\\filenameparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\helpers\\filenameparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\tmdbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\tmdbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\metadatacacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -46,7 +46,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 200,
-          "SelectedChildIndex": 13,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -82,13 +82,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "TMDbService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\TMDbService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\TMDbService.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\TMDbService.cs",
               "RelativeToolTip": "ShowStasher\\Services\\TMDbService.cs",
-              "ViewState": "AgIAAL8AAAAAAAAAAADwv8wAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAkwMwAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-19T05:08:59.748Z",
               "EditorCaption": ""
@@ -137,20 +137,20 @@
               "RelativeDocumentMoniker": "ShowStasher\\Helpers\\FilenameParser.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Helpers\\FilenameParser.cs",
               "RelativeToolTip": "ShowStasher\\Helpers\\FilenameParser.cs",
-              "ViewState": "AgIAAGQAAAAAAAAAAADwv2oAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABMAAAAAAAAAAAAqwFcAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-17T12:48:18.863Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "FileOrganizerService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\FileOrganizerService.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeToolTip": "ShowStasher\\Services\\FileOrganizerService.cs",
-              "ViewState": "AgIAAIAAAAAAAAAAAAAIwIwAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAB8BAAAAAAAAAAAAADIBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-16T15:28:56.676Z",
               "EditorCaption": ""
