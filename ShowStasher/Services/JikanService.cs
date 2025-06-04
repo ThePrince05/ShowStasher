@@ -8,6 +8,7 @@ using ShowStasher.MVVM.Models;
 using System.Net.Http;
 using Newtonsoft.Json;
 using ShowStasher.Helpers;
+using System.Text.RegularExpressions;
 
 namespace ShowStasher.Services
 {
@@ -71,7 +72,8 @@ namespace ShowStasher.Services
             };
 
             // ✅ Save to cache
-            await _cache.SaveMetadataAsync(metadata);
+            string normalizedKey = NormalizeTitleKey(metadata.Title);
+            await _cache.SaveMetadataAsync(normalizedKey, metadata);
 
             return metadata;
         }
@@ -109,7 +111,12 @@ namespace ShowStasher.Services
             dynamic data = JsonConvert.DeserializeObject(json);
             return data?.data?.title as string;
         }
+
+        private string NormalizeTitleKey(string title)
+        {
+            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
+                        .Trim(); // remove surrounding whitespace
+        }
+
     }
-
-
 }

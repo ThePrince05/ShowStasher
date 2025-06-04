@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ShowStasher.Services
@@ -43,10 +44,17 @@ namespace ShowStasher.Services
 
             if (metadata != null)
             {
-                await _cacheService.SaveMetadataAsync(metadata);
+                string normalizedKey = NormalizeTitleKey(metadata.Title);
+                await _cacheService.SaveMetadataAsync(normalizedKey, metadata);
             }
 
             return metadata;
+        }
+
+        private string NormalizeTitleKey(string title)
+        {
+            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
+                        .Trim(); // remove surrounding whitespace
         }
     }
 

@@ -40,7 +40,7 @@ namespace ShowStasher.MVVM.ViewModels
         {
             string tmdbApiKey = ConfigurationManager.AppSettings["TMDbApiKey"];
 
-            var cacheService = new MetadataCacheService();
+            var cacheService = new MetadataCacheService(Log);
 
             TMDbService tmdbService = null;
 

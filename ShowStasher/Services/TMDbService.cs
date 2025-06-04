@@ -103,7 +103,9 @@ namespace ShowStasher.Services
                     EpisodeTitle = episodeTitle
                 };
 
-                await _cache.SaveMetadataAsync(metadata);
+                string normalizedKey = NormalizeTitleKey(metadata.Title);
+                await _cache.SaveMetadataAsync(normalizedKey, metadata);
+
                 return metadata;
             }
             catch (HttpRequestException e)
@@ -183,18 +185,28 @@ namespace ShowStasher.Services
 
                 var detailsJson = await detailsResponse.Content.ReadAsStringAsync();
                 var details = JObject.Parse(detailsJson);
+                var releaseDateStr = details["release_date"]?.ToString();
+               
+                int? releaseYear = null;
+
+                if (DateTime.TryParse(releaseDateStr, out var releaseDate))
+                {
+                    releaseYear = releaseDate.Year;
+                }
 
                 var metadata = new MediaMetadata
                 {
                     Title = movieTitle,
                     Type = "Movie",
+                    Year = releaseYear,
                     Synopsis = details["overview"]?.ToString() ?? "",
                     Rating = "N/A",
                     PG = details["adult"]?.ToObject<bool>() == true ? "18+" : "PG-13",
                     PosterUrl = string.IsNullOrWhiteSpace(posterPath) ? "" : "https://image.tmdb.org/t/p/w500" + posterPath
                 };
 
-                await _cache.SaveMetadataAsync(metadata);
+                string normalizedKey = NormalizeTitleKey(metadata.Title);
+                await _cache.SaveMetadataAsync(normalizedKey, metadata);
                 return metadata;
             }
             catch (HttpRequestException e)
@@ -221,6 +233,7 @@ namespace ShowStasher.Services
                 _log($"Saved poster.jpg in {Path.GetDirectoryName(savePath)}");
                 return true;
             }
+
             catch (TaskCanceledException)
             {
                 _log($"Timeout while downloading poster for {Path.GetFileName(savePath)}");
@@ -281,6 +294,12 @@ namespace ShowStasher.Services
                 poster: "https://image.tmdb.org/t/p/w500" + data["poster_path"]?.ToString()
             );
         }
+        private string NormalizeTitleKey(string title)
+        {
+            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
+                        .Trim(); // remove surrounding whitespace
+        }
+
     }
 
 

@@ -55,6 +55,7 @@ D:\Projects\Visual Studio\ShowStasher\ShowStasher\bin\Debug\net8.0-windows10.0.1
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher.csproj.AssemblyReference.cache
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\MVVM\Views\MainWindow.g.cs
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\App.g.cs
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher_Content.g.cs
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\GeneratedInternalTypeHelper.g.cs
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher_MarkupCompile.cache
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher_MarkupCompile.lref

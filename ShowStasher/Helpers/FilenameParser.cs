@@ -10,14 +10,7 @@ using System.Threading.Tasks;
 namespace ShowStasher.Helpers
 {
    
-        public class ParsedFileInfo
-        {
-            public string Title { get; set; } = string.Empty;
-            public int? Season { get; set; }
-            public int? Episode { get; set; }
-            public string Type { get; set; } = "Unknown"; // "Movie", "Series", or "Anime"
-        }
-
+     
     public static class FilenameParser
     {
         private static readonly Regex SeasonEpisodeRegex = new(
@@ -27,6 +20,15 @@ namespace ShowStasher.Helpers
         // Catch "- 02" as anime fallback if needed
         private static readonly Regex DashEpisodeRegex = new(
             @"-\s*(\d{1,2})$", RegexOptions.Compiled);
+
+        private static readonly Regex YearRegex = new(
+        @"\b(19|20)\d{2}\b", RegexOptions.Compiled);
+
+        // new: match "v2", "v10", etc. even when glued to digits
+        private static readonly Regex VersionGarbageRegex = new(
+            @"v\d+\b",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
 
         private static readonly string[] KnownGarbageWords = {
             // Resolutions
@@ -57,20 +59,18 @@ namespace ShowStasher.Helpers
         };
 
 
-        // new: match "v2", "v10", etc. even when glued to digits
-        private static readonly Regex VersionGarbageRegex = new(
-            @"v\d+\b",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-
-        public static ParsedFileInfo Parse(string filePath)
+        public static ParsedMediaInfo Parse(string filePath)
         {
             var fileName = Path.GetFileNameWithoutExtension(filePath);
-            var cleaned = Regex.Replace(fileName,
-            @"\bv\d+\b",
-            "",
-            RegexOptions.IgnoreCase);
 
+            // Extract year from original filename
+            int? year = null;
+            Match yearMatch = YearRegex.Match(fileName);
+            if (yearMatch.Success)
+                year = int.Parse(yearMatch.Value);
+
+            // Remove version tokens (e.g., "v2")
+            var cleaned = Regex.Replace(fileName, @"\bv\d+\b", "", RegexOptions.IgnoreCase);
             cleaned = CleanFilenamePreservingTokens(cleaned);
 
             int? season = null, episode = null;
@@ -99,43 +99,42 @@ namespace ShowStasher.Helpers
                 }
             }
 
-            string title;
-            if (match.Success && match.Index >= 0 && match.Index <= cleaned.Length)
-            {
-                title = cleaned.Substring(0, match.Index).Trim();
-            }
-            else
-            {
-                title = cleaned;
-            }
+            string title = match.Success && match.Index >= 0 && match.Index <= cleaned.Length
+                ? cleaned.Substring(0, match.Index).Trim()
+                : cleaned;
 
+            // Clean trailing dashes/dots/spaces
             title = Regex.Replace(title, @"[-._\s]+$", "").Trim();
 
-            // 🎌 Anime detection based on keywords or patterns
+            // Remove embedded year from title (e.g. "Anaconda 1997")
+            if (year.HasValue)
+            {
+                title = Regex.Replace(title, $@"\b{year.Value}\b", "", RegexOptions.IgnoreCase).Trim();
+            }
+
+            // Anime detection
             string lower = fileName.ToLowerInvariant();
             bool isAnime = lower.Contains("anime") ||
                            lower.Contains("fansub") ||
                            lower.Contains("subbed") ||
                            lower.Contains("japan") ||
                            lower.Contains("crunchyroll") ||
-                           Regex.IsMatch(lower, @"\[.*?\]") || // [SubGroup] etc.
+                           Regex.IsMatch(lower, @"\[.*?\]") ||
                            Regex.IsMatch(lower, @"\b(cr|funimation|hidive|bd|bluray)\b", RegexOptions.IgnoreCase) ||
                            Regex.IsMatch(lower, @"\b(ep|s\d+e\d+)\b", RegexOptions.IgnoreCase) && lower.Contains("720p") && lower.Contains("hevc");
 
-            string type;
-            if (season.HasValue && episode.HasValue)
-                type = "Series";
-            else
-                type = "Movie";
+            string type = (season.HasValue && episode.HasValue) ? "Series" : "Movie";
 
-            return new ParsedFileInfo
+            return new ParsedMediaInfo
             {
                 Title = title,
                 Season = season,
                 Episode = episode,
-                Type = type
+                Type = type,
+                Year = year
             };
         }
+
 
 
         private static string CleanFilenamePreservingTokens(string name)

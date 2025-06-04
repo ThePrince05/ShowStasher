@@ -7,8 +7,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
 	<UseWindowsForms>true</UseWindowsForms>
+	<PackageIcon>movies_folder_20806.png</PackageIcon>
+	<ApplicationIcon>movies_folder_20806.ico</ApplicationIcon>
 
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="movies_folder_20806.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\Videos\Project Videos\C# Projects\WPF\Videos\ShowStasher\movies_folder_20806.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

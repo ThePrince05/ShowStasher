@@ -11,6 +11,7 @@ namespace ShowStasher.MVVM.Models
     {
         public string Title { get; set; }
         public string Type { get; set; } // Movie, Series, Anime
+        public int? Year { get; set; }
         public string Synopsis { get; set; }
         public string Rating { get; set; }
         public string PG { get; set; }
