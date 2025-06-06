@@ -221,8 +221,6 @@ namespace ShowStasher.Services
 
 
 
-
-
         private async Task MoveAndOrganizeAsync(string filePath, MediaMetadata metadata, string destinationRoot)
         {
             _log($"Metadata.Title: {metadata.Title}, Year: {metadata.Year}");
@@ -367,7 +365,7 @@ namespace ShowStasher.Services
             if (!File.Exists(synopsisPath))
             {
                 File.WriteAllText(synopsisPath,
-                    $"{metadata.Title}\nRating: {metadata.Rating}\n\n{metadata.Synopsis}");
+                    $"{metadata.Title} \nPG Rating: {metadata.PG} \nUser Score: {metadata.Rating}/100 \nCast: {metadata.Cast} \n\n{metadata.Synopsis}");
                 _log($"Saved synopsis.txt in {folder}");
             }
         }

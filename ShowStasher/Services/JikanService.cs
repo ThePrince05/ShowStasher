@@ -63,7 +63,7 @@ namespace ShowStasher.Services
                 Title = searchResult.Title,
                 Type = "Anime",
                 Synopsis = searchResult.Synopsis,
-                Rating = "N/A",
+                Rating = null,
                 PG = searchResult.Rating,
                 PosterUrl = searchResult.ImageUrl,
                 Season = season,

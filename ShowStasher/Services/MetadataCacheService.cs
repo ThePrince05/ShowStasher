@@ -46,7 +46,8 @@ namespace ShowStasher.Services
             Type TEXT NOT NULL,
             Year INTEGER,
             Synopsis TEXT,
-            Rating REAL,
+            Cast TEXT,
+            Rating INTEGER,
             PG TEXT,
             PosterUrl TEXT,
             Season INTEGER,
@@ -97,7 +98,7 @@ namespace ShowStasher.Services
                     Type = reader.GetString(1),
                     Year = reader.IsDBNull(2) ? null : reader.GetInt32(2),
                     Synopsis = reader.IsDBNull(3) ? null : reader.GetString(3),
-                    Rating = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Rating = reader.IsDBNull(4) ? null : reader.GetInt32(4),
                     PG = reader.IsDBNull(5) ? null : reader.GetString(5),
                     PosterUrl = reader.IsDBNull(6) ? null : reader.GetString(6),
                     Season = reader.IsDBNull(7) ? null : reader.GetInt32(7),
@@ -123,17 +124,19 @@ namespace ShowStasher.Services
 
             var insertCmd = connection.CreateCommand();
             insertCmd.CommandText =
+            insertCmd.CommandText =
             @"
             INSERT OR REPLACE INTO MediaMetadataCache 
-            (Title, Type, Year, Synopsis, Rating, PG, PosterUrl, Season, Episode, EpisodeTitle)
+            (Title, Type, Year, Synopsis, Rating, PG, PosterUrl, Season, Episode, EpisodeTitle, Cast)
             VALUES
-            ($title, $type, $year, $synopsis, $rating, $pg, $posterUrl, $season, $episode, $episodeTitle)
+            ($title, $type, $year, $synopsis, $rating, $pg, $posterUrl, $season, $episode, $episodeTitle, $cast)
             ";
 
             insertCmd.Parameters.AddWithValue("$title", normalizedKey);
             insertCmd.Parameters.AddWithValue("$type", metadata.Type.Trim().ToLowerInvariant());
             insertCmd.Parameters.AddWithValue("$year", metadata.Year ?? (object)DBNull.Value);
             insertCmd.Parameters.AddWithValue("$synopsis", metadata.Synopsis ?? (object)DBNull.Value);
+            insertCmd.Parameters.AddWithValue("$cast", metadata.Cast ?? (object)DBNull.Value);
             insertCmd.Parameters.AddWithValue("$rating", metadata.Rating ?? (object)DBNull.Value);
             insertCmd.Parameters.AddWithValue("$pg", metadata.PG ?? (object)DBNull.Value);
             insertCmd.Parameters.AddWithValue("$posterUrl", metadata.PosterUrl ?? (object)DBNull.Value);
