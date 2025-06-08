@@ -284,8 +284,8 @@ namespace ShowStasher.Services
             }
 
             // 5. Save synopsis and poster in actual content folder
-            SaveSynopsisIfMissing(metadataRootFolder, metadata);
-            await SavePosterIfMissingAsync(metadataRootFolder, metadata);
+            SaveSynopsis(metadataRootFolder, metadata);
+            await SavePosterAsync(metadataRootFolder, metadata);
 
             // 6. Log folder usage (e.g., "Series: C\Common Side Effects" or "Movie: N\Nope")
             LogFolderUsage(metadata.Type, metadataRootFolder);
@@ -359,18 +359,37 @@ namespace ShowStasher.Services
             }
         }
 
-        private void SaveSynopsisIfMissing(string folder, MediaMetadata metadata)
+        private void SaveSynopsis(string folder, MediaMetadata metadata)
         {
             string synopsisPath = Path.Combine(folder, "synopsis.txt");
+
+            // Debug logs for everything before writing
+            _log($"[DEBUG] Preparing to write synopsis:");
+            _log($"[DEBUG] Title: {metadata.Title}");
+            _log($"[DEBUG] PG Rating: {metadata.PG}");
+            _log($"[DEBUG] User Score: {metadata.Rating}");
+            _log($"[DEBUG] Cast: {metadata.Cast}");
+            _log($"[DEBUG] Synopsis: {(string.IsNullOrWhiteSpace(metadata.Synopsis) ? "[Empty]" : metadata.Synopsis.Substring(0, Math.Min(100, metadata.Synopsis.Length)) + "...")}");
+
             if (!File.Exists(synopsisPath))
             {
                 File.WriteAllText(synopsisPath,
-                    $"{metadata.Title} \nPG Rating: {metadata.PG} \nUser Score: {metadata.Rating}/100 \nCast: {metadata.Cast} \n\n{metadata.Synopsis}");
+                    $"{ToTitleCase(metadata.Title)} \n" +
+                    $"PG Rating: {metadata.PG} \n" +
+                    $"User Score: {metadata.Rating}/100 \n" +
+                    $"Cast: {metadata.Cast} \n\n" +
+                    $"{metadata.Synopsis}");
+
                 _log($"Saved synopsis.txt in {folder}");
+            }
+            else
+            {
+                _log($"[DEBUG] synopsis.txt already exists in {folder}, skipping write.");
             }
         }
 
-        private async Task SavePosterIfMissingAsync(string folder, MediaMetadata metadata)
+
+        private async Task SavePosterAsync(string folder, MediaMetadata metadata)
         {
             if (string.IsNullOrWhiteSpace(metadata.PosterUrl)) return;
 

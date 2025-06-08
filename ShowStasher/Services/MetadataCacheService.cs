@@ -73,11 +73,12 @@ namespace ShowStasher.Services
             var selectCmd = connection.CreateCommand();
             selectCmd.CommandText =
             @"
-            SELECT Title, Type, Year, Synopsis, Rating, PG, PosterUrl, Season, Episode, EpisodeTitle
+            SELECT Title, Type, Year, Synopsis, ""Cast"", Rating, PG, PosterUrl, Season, Episode, EpisodeTitle
             FROM MediaMetadataCache
             WHERE Title = $title AND Type = $type
                   AND Season = $season AND Episode = $episode
             ";
+
 
             int seasonValue = season ?? -1;
             int episodeValue = episode ?? -1;
@@ -98,13 +99,15 @@ namespace ShowStasher.Services
                     Type = reader.GetString(1),
                     Year = reader.IsDBNull(2) ? null : reader.GetInt32(2),
                     Synopsis = reader.IsDBNull(3) ? null : reader.GetString(3),
-                    Rating = reader.IsDBNull(4) ? null : reader.GetInt32(4),
-                    PG = reader.IsDBNull(5) ? null : reader.GetString(5),
-                    PosterUrl = reader.IsDBNull(6) ? null : reader.GetString(6),
-                    Season = reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                    Episode = reader.IsDBNull(8) ? null : reader.GetInt32(8),
-                    EpisodeTitle = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    Cast = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Rating = reader.IsDBNull(5) ? null : reader.GetInt32(5),
+                    PG = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    PosterUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    Season = reader.IsDBNull(8) ? null : reader.GetInt32(8),
+                    Episode = reader.IsDBNull(9) ? null : reader.GetInt32(9),
+                    EpisodeTitle = reader.IsDBNull(10) ? null : reader.GetString(10),
                 };
+
             }
 
             _log($"[DEBUG-LOOKUP] No match found in cache for Title='{normalizedTitle}', Type='{type}', Season={season}, Episode={episode}");
