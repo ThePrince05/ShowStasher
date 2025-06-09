@@ -27,7 +27,7 @@ namespace ShowStasher.Services
             _cacheService = cacheService;
         }
 
-        public async Task OrganizeFilesAsync(string sourceFolder, string destinationFolder, bool isOfflineMode)
+        public async Task OrganizeFilesAsync(string sourceFolder, string destinationFolder, bool isOfflineMode, IProgress<int>? progress = null)
         {
             var allowedExtensions = new[] { ".mp4", ".mkv", ".avi", ".mov" };
             var files = Directory.GetFiles(sourceFolder)
@@ -35,6 +35,9 @@ namespace ShowStasher.Services
                                  .ToList();
 
             var processed = new HashSet<string>();
+
+            int totalFiles = files.Count;
+            int processedCount = 0;
 
             foreach (var file in files)
             {
@@ -84,9 +87,14 @@ namespace ShowStasher.Services
                 else
                     _log($"Preparing to save movie: {metadata.Title}");
 
-                await MoveAndOrganizeAsync(file, metadata, destinationFolder,isOfflineMode);
+                await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
+
+                // Report progress as a percentage
+                processedCount++;
+                progress?.Report((int)((processedCount / (double)totalFiles) * 100));
             }
         }
+
         private async Task<MediaMetadata?> TryLoadFromCacheOnly(ParsedMediaInfo parsed)
         {
             string normalizedKey = NormalizeTitleKey(parsed.Title);

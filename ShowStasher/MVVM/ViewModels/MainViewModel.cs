@@ -34,6 +34,13 @@ namespace ShowStasher.MVVM.ViewModels
         [ObservableProperty]
         private bool isOfflineMode;
 
+        [ObservableProperty]
+        private int progress;
+
+        [ObservableProperty]
+        private bool isBusy;
+
+
 
 
         // Holds real-time log messages
@@ -137,10 +144,17 @@ namespace ShowStasher.MVVM.ViewModels
 
             StatusMessage = "Organizing files...";
             Log("Started organizing...");
+            IsBusy = true;
+            Progress = 0;
+
+            var progressReporter = new Progress<int>(percent =>
+            {
+                Progress = percent;
+            });
 
             try
             {
-                await _fileOrganizerService.OrganizeFilesAsync(SourcePath, DestinationPath, IsOfflineMode);
+                await _fileOrganizerService.OrganizeFilesAsync(SourcePath, DestinationPath, IsOfflineMode, progressReporter);
                 StatusMessage = "Done!";
                 Log("Finished organizing files.");
             }
@@ -148,6 +162,10 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 StatusMessage = "Error occurred during organizing.";
                 Log($"Error: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 

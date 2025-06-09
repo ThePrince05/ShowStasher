@@ -3,20 +3,20 @@
   "WorkspaceRootPath": "D:\\Projects\\Visual Studio\\ShowStasher\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\metadatacacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -42,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 14,
+          "SelectedChildIndex": 13,
           "Children": [
             {
               "$type": "Bookmark",
@@ -78,7 +78,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "App.xaml",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\App.xaml",
               "RelativeDocumentMoniker": "ShowStasher\\App.xaml",
@@ -98,8 +98,7 @@
               "RelativeToolTip": "ShowStasher\\Services\\JikanService.cs",
               "ViewState": "AgIAAKQAAAAAAAAAAAAuwMoAAABWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-02T14:14:43.125Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-02T14:14:43.125Z"
             },
             {
               "$type": "Document",
@@ -111,8 +110,7 @@
               "RelativeToolTip": "ShowStasher\\Services\\MetadataCacheService.cs",
               "ViewState": "AgIAACQAAAAAAAAAAADwvzYAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-19T04:38:41.997Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-19T04:38:41.997Z"
             },
             {
               "$type": "Document",
@@ -134,14 +132,14 @@
               "RelativeDocumentMoniker": "ShowStasher\\Services\\FileOrganizerService.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeToolTip": "ShowStasher\\Services\\FileOrganizerService.cs",
-              "ViewState": "AgIAABoBAAAAAAAAAAAqwDkBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAEQAAAAAAAAAAAAQwGAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-16T15:28:56.676Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\MainWindow.xaml",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Views\\MainWindow.xaml",
@@ -153,13 +151,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "MainViewModel.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "RelativeToolTip": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAzwFgAAAAHAAAAAAAAAA==",
+              "ViewState": "AgIAAI4AAAAAAAAAAAAgwKoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-16T12:01:18.84Z",
               "EditorCaption": ""
