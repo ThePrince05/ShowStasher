@@ -254,13 +254,19 @@ namespace ShowStasher.Services
 
                 // Sanitize episode title
                 string epTitle = string.IsNullOrWhiteSpace(metadata.EpisodeTitle)
-                 ? ""
-                 : SanitizeFilename(ToTitleCase(metadata.EpisodeTitle));
+                    ? ""
+                    : SanitizeFilename(ToTitleCase(metadata.EpisodeTitle));
+
+                // Detect generic titles like "Episode 8" and remove them
+                if (Regex.IsMatch(epTitle, @"^Episode\s*\d+$", RegexOptions.IgnoreCase))
+                {
+                    _log($"[Info] Skipping generic episode title '{epTitle}' in filename.");
+                    epTitle = "";
+                }
 
                 newFileName = string.IsNullOrEmpty(epTitle)
                     ? $"{epNum}{extension}"
                     : $"{epNum} - {epTitle}{extension}";
-
             }
             else
             {
@@ -287,9 +293,10 @@ namespace ShowStasher.Services
             SaveSynopsis(metadataRootFolder, metadata);
             await SavePosterAsync(metadataRootFolder, metadata);
 
-            // 6. Log folder usage (e.g., "Series: C\Common Side Effects" or "Movie: N\Nope")
+            // 6. Log folder usage (e.g., "Series: C\Common Side Effects" or "Movies: N\Nope")
             LogFolderUsage(metadata.Type, metadataRootFolder);
         }
+
 
 
 

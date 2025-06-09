@@ -9,6 +9,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using ShowStasher.Helpers;
 using System.Text.RegularExpressions;
+using System.Net.Http.Json;
 
 namespace ShowStasher.Services
 {
@@ -16,7 +17,7 @@ namespace ShowStasher.Services
     {
         private readonly HttpClient _httpClient;
         private readonly Action<string> _log;
-        private readonly MetadataCacheService _cache;
+        private readonly MetadataCacheService _metadataCacheService;
 
         public JikanService(MetadataCacheService cache, Action<string> log)
         {
@@ -24,99 +25,197 @@ namespace ShowStasher.Services
             {
                 BaseAddress = new Uri("https://api.jikan.moe/v4/")
             };
-            _cache = cache;
+            _metadataCacheService = cache;
             _log = log;
         }
 
-        public async Task<MediaMetadata?> GetAnimeMetadataAsync(string title, int? season = null, int? episode = null)
+        public async Task<MediaMetadata?> GetAnimeMetadataAsync(string title, int? season, int? episode)
         {
-            // ✅ Check cache first
-            var cached = await _cache.GetCachedMetadataAsync(title, "Anime", season, episode);
+            var cached = await _metadataCacheService.GetCachedMetadataAsync(title, "Series", season, episode);
             if (cached != null)
             {
-                _log($"[Cache] Found cached anime metadata for '{title}' S{season}E{episode}");
+                _log($"[Cache Hit] Anime '{title}' episode {episode} found.");
                 return cached;
             }
 
-            _log($"Searching for anime: '{title}'");
-
-            var searchResult = await SearchAnimeByTitle(title);
-            if (searchResult == null)
+            _log($"[Jikan] Searching for anime: '{title}'...");
+            var anime = await SearchAnimeByTitleAsync(title);
+            if (anime == null)
             {
-                _log($"No anime found for title: '{title}'");
+                _log($"[Jikan] No match found for '{title}'.");
                 return null;
             }
 
-            var animeId = searchResult.MalId;
-            _log($"Found anime '{searchResult.Title}' with MAL ID {animeId}");
-
-            string episodeTitle = null;
-            if (episode.HasValue)
+            // 🆕 Extract English title (fallback to original title if missing)
+            string englishTitle = anime.Titles?.FirstOrDefault(t => t.Type == "English")?.Title ?? anime.Title;
+            string normalizedTitle = NormalizeTitleKey(englishTitle);
+            string synopsis = anime.Synopsis ?? "No synopsis available.";
+            string posterUrl = anime.Images?.Jpg?.ImageUrl ?? "";
+            string pgRating = anime.Rating ?? "N/A";
+            int animeId = anime.MalId;
+           
+            int fetchMalId = animeId;
+            if (season.HasValue && season.Value > 1)
             {
-                _log($"Fetching episode {episode.Value} for anime ID {animeId}");
-                episodeTitle = await FetchAnimeEpisodeTitle(animeId, episode.Value);
-                _log($"Episode title: {episodeTitle ?? "Not found"}");
+                fetchMalId = await GetSeasonMalIdAsync(animeId, season.Value);
+                _log($"[Jikan] Resolved Season {season.Value} MAL ID: {fetchMalId}");
             }
 
-            var metadata = new MediaMetadata
+            _log($"[Jikan] Using title: {englishTitle}");
+            _log($"[Jikan] Fetching ALL episodes for Anime ID {animeId}...");
+
+            var episodes = await FetchAllEpisodesAsync(fetchMalId);
+            MediaMetadata? requestedEpisodeMetadata = null;
+
+            foreach (var ep in episodes)
             {
-                Title = searchResult.Title,
-                Type = "Anime",
-                Synopsis = searchResult.Synopsis,
+                if (string.IsNullOrWhiteSpace(ep.Title) || ep.EpisodeId == 0)
+                    continue;
+
+                var metadata = new MediaMetadata
+                {
+                    Title = englishTitle,
+                    Type = "Series", // Unified type
+                    Synopsis = synopsis,
+                    PosterUrl = posterUrl,
+                    PG = pgRating,
+                    Rating = null,
+                    Season = season ?? 1,
+                    Episode = ep.EpisodeId,
+                    EpisodeTitle = ep.Title
+                };
+
+                await _metadataCacheService.SaveMetadataAsync(normalizedTitle, metadata);
+                _log($"[Jikan] Cached: Episode {metadata.Episode} - {metadata.EpisodeTitle}");
+
+                if (episode.HasValue && ep.EpisodeId == episode.Value)
+                {
+                    requestedEpisodeMetadata = metadata;
+                }
+            }
+
+            if (requestedEpisodeMetadata != null)
+            {
+                _log($"[Success] Found and cached episode {episode.Value} for '{englishTitle}'.");
+                return requestedEpisodeMetadata;
+            }
+
+            _log($"[Info] Requested episode not found or not specified, returning base metadata.");
+
+            // ⬇️ Updated fallback metadata to also use the English title
+            var genericMetadata = new MediaMetadata
+            {
+                Title = englishTitle,
+                Type = "Series",
+                Synopsis = synopsis,
+                PosterUrl = posterUrl,
+                PG = pgRating,
                 Rating = null,
-                PG = searchResult.Rating,
-                PosterUrl = searchResult.ImageUrl,
-                Season = season,
-                Episode = episode,
-                EpisodeTitle = episodeTitle
+                Season = null,
+                Episode = null
             };
 
-            // ✅ Save to cache
-            string normalizedKey = NormalizeTitleKey(metadata.Title);
-            await _cache.SaveMetadataAsync(normalizedKey, metadata);
-
-            return metadata;
+            await _metadataCacheService.SaveMetadataAsync(normalizedTitle, genericMetadata);
+            _log($"[Generic] Saved base metadata for anime '{englishTitle}'");
+            return genericMetadata;
         }
 
-        private async Task<JikanAnimeSearchResult?> SearchAnimeByTitle(string title)
-        {
-            var url = $"anime?q={Uri.EscapeDataString(title)}&limit=1";
-            _log($"Requesting: {url}");
 
-            var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                _log($"Failed to search anime. Status: {(int)response.StatusCode} - {response.ReasonPhrase}");
-                return null;
-            }
 
-            var json = await response.Content.ReadAsStringAsync();
-            var searchResponse = JsonConvert.DeserializeObject<JikanAnimeSearchResponse>(json);
-            return searchResponse?.Data?.FirstOrDefault();
-        }
 
-        private async Task<string?> FetchAnimeEpisodeTitle(int animeId, int episodeNumber)
-        {
-            var url = $"anime/{animeId}/episodes/{episodeNumber}";
-            _log($"Requesting episode info: {url}");
-
-            var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                _log($"Failed to fetch episode title. Status: {(int)response.StatusCode} - {response.ReasonPhrase}");
-                return null;
-            }
-
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(json);
-            return data?.data?.title as string;
-        }
 
         private string NormalizeTitleKey(string title)
         {
             return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
                         .Trim(); // remove surrounding whitespace
         }
+        private async Task<JikanAnimeData?> SearchAnimeByTitleAsync(string title)
+        {
+            try
+            {
+                string query = Uri.EscapeDataString(title);
+                var response = await _httpClient.GetFromJsonAsync<JikanAnimeSearchResponse>(
+                    $"https://api.jikan.moe/v4/anime?q={query}&limit=5");
+
+                var animeList = response?.Data;
+
+                if (animeList == null || animeList.Count == 0)
+                {
+                    _log($"[Jikan] No results found for \"{title}\".");
+                    return null;
+                }
+
+                var bestMatch = animeList
+                    .FirstOrDefault(a =>
+                        string.Equals(a.Title, title, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(a.TitleEnglish, title, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(a.TitleJapanese, title, StringComparison.OrdinalIgnoreCase)) ?? animeList.First();
+
+                _log($"[Jikan] Found anime: \"{bestMatch.Title}\" (ID: {bestMatch.MalId})");
+                return bestMatch;
+            }
+            catch (Exception ex)
+            {
+                _log($"[Jikan] SearchAnimeByTitleAsync error: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<List<JikanEpisode>> FetchAllEpisodesAsync(int malId)
+        {
+            var allEpisodes = new List<JikanEpisode>();
+            int currentPage = 1;
+            bool hasNextPage;
+
+            do
+            {
+                try
+                {
+                    string url = $"https://api.jikan.moe/v4/anime/{malId}/episodes?page={currentPage}";
+                    var response = await _httpClient.GetFromJsonAsync<JikanEpisodeListResponse>(url);
+
+                    if (response?.Data != null)
+                    {
+                        allEpisodes.AddRange(response.Data);
+                        _log($"[Jikan] Fetched page {currentPage} with {response.Data.Count} episodes.");
+                    }
+
+                    hasNextPage = response?.Pagination?.HasNextPage ?? false;
+                    currentPage++;
+                }
+                catch (Exception ex)
+                {
+                    _log($"[Jikan] Error fetching episodes (page {currentPage}): {ex.Message}");
+                    break;
+                }
+
+                // Optional: be nice to the API
+                await Task.Delay(300);
+            }
+            while (hasNextPage);
+
+            _log($"[Jikan] Total episodes fetched: {allEpisodes.Count}");
+            return allEpisodes;
+        }
+
+        private async Task<int> GetSeasonMalIdAsync(int baseMalId, int season)
+        {
+            var relResponse = await _httpClient.GetFromJsonAsync<JikanRelationResponse>(
+                $"https://api.jikan.moe/v4/anime/{baseMalId}/relations");
+            if (relResponse?.Data == null)
+                throw new Exception($"No relations for anime ID {baseMalId}");
+
+            var seRel = relResponse.Data
+                .FirstOrDefault(r => r.RelationType.Equals("Sequel", StringComparison.OrdinalIgnoreCase)
+                                     && r.Entry.Any(e => e.Name.Contains($"Season {season}")));
+            if (seRel != null)
+                return seRel.Entry.First().MalId;
+
+            throw new Exception($"Season {season} not found in relations of anime {baseMalId}");
+        }
+
+
+
 
     }
 }

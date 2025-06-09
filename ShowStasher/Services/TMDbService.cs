@@ -33,11 +33,11 @@ namespace ShowStasher.Services
             var cached = await _cache.GetCachedMetadataAsync(title, "Series", season, episode);
             if (cached != null)
             {
-                _log($"[Cache] Found cached series metadata for '{title}' S{season}E{episode}");
+                _log($"[Cache Hit] Series '{title}' S{season}E{episode} found in cache.");
                 return cached;
             }
 
-            _log($"Searching for series: '{title}'");
+            _log($"[TMDb] Searching for series title: '{title}'");
             int? tvId;
             try
             {
@@ -45,17 +45,17 @@ namespace ShowStasher.Services
             }
             catch (HttpRequestException e)
             {
-                _log($"Error getting series ID: {e.Message}");
+                _log($"[Error] Network error while fetching series ID: {e.Message}");
                 return null;
             }
 
             if (tvId == null)
             {
-                _log($"No series found for '{title}'.");
+                _log($"[Not Found] No TMDb match found for series title '{title}'.");
                 return null;
             }
 
-            _log($"Found series ID {tvId} for title '{title}'");
+            _log($"[TMDb] Found series ID {tvId} for '{title}'");
 
             bool seasonFetched = false;
 
@@ -63,14 +63,12 @@ namespace ShowStasher.Services
             {
                 try
                 {
-                    // Fetch series-level metadata
                     string seriesUrl = $"https://api.themoviedb.org/3/tv/{tvId}?api_key={_apiKey}";
-                    _log($"Fetching series details from {seriesUrl}");
+                    _log($"[Fetch] Series-level metadata from {seriesUrl}");
 
                     using var client = new HttpClient();
                     var seriesResponse = await client.GetAsync(seriesUrl);
                     seriesResponse.EnsureSuccessStatusCode();
-
                     var seriesJson = await seriesResponse.Content.ReadAsStringAsync();
                     var seriesData = JObject.Parse(seriesJson);
 
@@ -79,24 +77,21 @@ namespace ShowStasher.Services
                     string fullPosterUrl = string.IsNullOrWhiteSpace(posterPath) ? "" : "https://image.tmdb.org/t/p/w500" + posterPath;
 
                     int? seriesRating = null;
-                    if (seriesData["vote_average"]?.Type == JTokenType.Float || seriesData["vote_average"]?.Type == JTokenType.Integer)
+                    if (seriesData["vote_average"]?.Type is JTokenType.Float or JTokenType.Integer)
                     {
                         var voteAvg = seriesData["vote_average"]?.ToObject<double>() ?? 0;
                         if (voteAvg > 0)
                             seriesRating = (int)Math.Round(voteAvg * 10);
                     }
 
-                    // Fetch shared PG and cast
                     var cast = await GetCastAsync("tv", tvId.Value);
                     var pgRating = await GetPgRatingAsync(tvId.Value, isMovie: false);
 
-                    // Fetch all episodes in the season
                     string seasonUrl = $"https://api.themoviedb.org/3/tv/{tvId}/season/{season}?api_key={_apiKey}";
-                    _log($"Fetching all episodes for season {season} from {seasonUrl}");
+                    _log($"[Fetch] Season-level metadata from {seasonUrl}");
 
                     var response = await client.GetAsync(seasonUrl);
                     response.EnsureSuccessStatusCode();
-
                     var json = await response.Content.ReadAsStringAsync();
                     var seasonData = JObject.Parse(json);
                     var episodes = seasonData["episodes"] as JArray;
@@ -113,20 +108,20 @@ namespace ShowStasher.Services
 
                             if (string.IsNullOrWhiteSpace(epTitle) || string.IsNullOrWhiteSpace(airDateStr))
                             {
-                                _log($"[Skip] Episode S{season}E{epNum} missing title or air date. Skipping.");
+                                _log($"[Skip] Episode S{season}E{epNum} has no title or air date.");
                                 continue;
                             }
 
                             if (!DateTime.TryParse(airDateStr, out var airDate) || airDate > DateTime.Today)
                             {
-                                _log($"[Skip] Episode S{season}E{epNum} has not aired yet (Air date: {airDateStr}). Skipping.");
+                                _log($"[Skip] Episode S{season}E{epNum} has future air date ({airDateStr}).");
                                 continue;
                             }
 
-                            var episodeCached = await _cache.GetCachedMetadataAsync(title, "Series", year: null, season: season, episode: epNum);
+                            var episodeCached = await _cache.GetCachedMetadataAsync(title, "Series", null, season, epNum);
                             if (episodeCached != null)
                             {
-                                _log($"[Cache] Skipping already-cached episode S{season}E{epNum} - '{epTitle}'");
+                                _log($"[Cache Skip] Episode S{season}E{epNum} already cached.");
                                 continue;
                             }
 
@@ -146,7 +141,7 @@ namespace ShowStasher.Services
 
                             string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
                             await _cache.SaveMetadataAsync(normalizedKey, episodeMeta);
-                            _log($"[Saved] Cached S{season}E{epNum} - '{epTitle}'");
+                            _log($"[Cache Save] S{season}E{epNum} - '{epTitle}' saved.");
                         }
 
                         seasonFetched = true;
@@ -154,43 +149,39 @@ namespace ShowStasher.Services
                 }
                 catch (Exception ex)
                 {
-                    _log($"[Warning] Failed to prefetch season data: {ex.Message}");
+                    _log($"[Warning] Failed to prefetch season metadata: {ex.Message}");
                 }
             }
 
-            var final = await _cache.GetCachedMetadataAsync(title, "Series", year: null, season: season, episode: episode);
+            var final = await _cache.GetCachedMetadataAsync(title, "Series", null, season, episode);
             if (final != null)
             {
-                _log($"Returning metadata for '{title}' S{season}E{episode} from cache.");
+                _log($"[Success] Metadata for '{title}' S{season}E{episode} retrieved from cache.");
                 return final;
             }
 
-            // Fallback fetch
             if (season.HasValue && episode.HasValue && !seasonFetched)
             {
                 try
                 {
                     using var client = new HttpClient();
 
-                    // Get episode
                     string epUrl = $"https://api.themoviedb.org/3/tv/{tvId}/season/{season}/episode/{episode}?api_key={_apiKey}";
                     _log($"[Fallback] Fetching individual episode from {epUrl}");
 
                     var epResponse = await client.GetAsync(epUrl);
                     epResponse.EnsureSuccessStatusCode();
-
                     var epJson = await epResponse.Content.ReadAsStringAsync();
                     var ep = JObject.Parse(epJson);
 
                     var epTitle = ep["name"]?.ToString() ?? "";
                     if (string.IsNullOrWhiteSpace(epTitle))
                     {
-                        _log($"[Fallback] Episode title missing. Skipping.");
+                        _log($"[Fallback] Episode title not found.");
                         return null;
                     }
 
-                    // Get series metadata for fallback too
-                    string seriesUrl = $"https://api.themoviedb.org/3/tv/{tvId}?api_key={_apiKey}";
+                    var seriesUrl = $"https://api.themoviedb.org/3/tv/{tvId}?api_key={_apiKey}";
                     var seriesResponse = await client.GetAsync(seriesUrl);
                     seriesResponse.EnsureSuccessStatusCode();
                     var seriesJson = await seriesResponse.Content.ReadAsStringAsync();
@@ -201,14 +192,14 @@ namespace ShowStasher.Services
                     string fullPosterUrl = string.IsNullOrWhiteSpace(posterPath) ? "" : "https://image.tmdb.org/t/p/w500" + posterPath;
 
                     int? seriesRating = null;
-                    if (seriesData["vote_average"]?.Type == JTokenType.Float || seriesData["vote_average"]?.Type == JTokenType.Integer)
+                    if (seriesData["vote_average"]?.Type is JTokenType.Float or JTokenType.Integer)
                     {
                         var voteAvg = seriesData["vote_average"]?.ToObject<double>() ?? 0;
                         if (voteAvg > 0)
-                            seriesRating = (int)Math.Round(voteAvg);
+                            seriesRating = (int)Math.Round(voteAvg * 10);
                     }
 
-                    var cast = await GetCastAsync("tv",tvId.Value);
+                    var cast = await GetCastAsync("tv", tvId.Value);
                     var pgRating = await GetPgRatingAsync(tvId.Value, isMovie: false);
 
                     var episodeMeta = new MediaMetadata
@@ -227,19 +218,20 @@ namespace ShowStasher.Services
 
                     string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
                     await _cache.SaveMetadataAsync(normalizedKey, episodeMeta);
+                    _log($"[Fallback] Episode metadata saved: '{title}' S{season}E{episode}");
 
-                    _log($"[Fallback] Saved fallback metadata for '{title}' S{season}E{episode}");
                     return episodeMeta;
                 }
                 catch (Exception ex)
                 {
-                    _log($"[Error] Fallback fetch for episode failed: {ex.Message}");
+                    _log($"[Error] Fallback fetch failed: {ex.Message}");
                 }
             }
 
-            _log($"[Error] Metadata not found for '{title}' S{season}E{episode} after fallback.");
+            _log($"[Failure] No metadata found for '{title}' S{season}E{episode}.");
             return null;
         }
+
 
 
 
