@@ -31,6 +31,10 @@ namespace ShowStasher.MVVM.ViewModels
         [ObservableProperty]
         private string? selectedLogMessage;
 
+        [ObservableProperty]
+        private bool isOfflineMode;
+
+
 
         // Holds real-time log messages
         public ObservableCollection<string> LogMessages { get; } = new();
@@ -81,6 +85,20 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
+        [RelayCommand]
+        private void ClearLogs()
+        {
+            if (LogMessages.Count > 0)
+            {
+                LogMessages.Clear();
+                StatusMessage = "Logs cleared.";
+            }
+            else
+            {
+                StatusMessage = "No logs to clear.";
+            }
+        }
+
         private bool CanCopySelectedLog() => !string.IsNullOrWhiteSpace(SelectedLogMessage);
 
 
@@ -122,7 +140,7 @@ namespace ShowStasher.MVVM.ViewModels
 
             try
             {
-                await _fileOrganizerService.OrganizeFilesAsync(SourcePath, DestinationPath);
+                await _fileOrganizerService.OrganizeFilesAsync(SourcePath, DestinationPath, IsOfflineMode);
                 StatusMessage = "Done!";
                 Log("Finished organizing files.");
             }

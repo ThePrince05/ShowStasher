@@ -72,3 +72,8 @@ D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.1
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher.pdb
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ShowStasher.genruntimeconfig.cache
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\ref\ShowStasher.dll
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\bin\Debug\net8.0-windows10.0.17763.0\ControlzEx.dll
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\bin\Debug\net8.0-windows10.0.17763.0\MahApps.Metro.dll
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Xaml.Behaviors.dll
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\bin\Debug\net8.0-windows10.0.17763.0\de\MahApps.Metro.resources.dll
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\App.baml
