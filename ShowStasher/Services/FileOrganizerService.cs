@@ -35,65 +35,90 @@ namespace ShowStasher.Services
                                  .ToList();
 
             var processed = new HashSet<string>();
-
             int totalFiles = files.Count;
             int processedCount = 0;
 
+            // Kickstart the progress at 1%
+            progress?.Report(1);
+
+            if (totalFiles == 0)
+            {
+                _log("[Info] No video files found to process.");
+                progress?.Report(100);
+                return;
+            }
+
             foreach (var file in files)
             {
-                var parsed = FilenameParser.Parse(file);
-                if (string.IsNullOrWhiteSpace(parsed.Title))
-                    continue;
-
-                string episodeKey = $"{parsed.Title}|S{parsed.Season}|E{parsed.Episode}";
-                if (!processed.Add(episodeKey))
+                try
                 {
-                    _log($"Skipped duplicate: {episodeKey}");
-                    continue;
-                }
-
-                MediaMetadata? metadata;
-
-                if (isOfflineMode)
-                {
-                    _log($"[OFFLINE] Attempting to load from cache only: {parsed.Title}");
-                    metadata = await TryLoadFromCacheOnly(parsed);
-
-                    if (metadata == null)
+                    var parsed = FilenameParser.Parse(file);
+                    if (string.IsNullOrWhiteSpace(parsed.Title))
                     {
-                        _log($"[OFFLINE] No cached metadata found for '{parsed.Title}'. Falling back to filename-based organization.");
-                        metadata = new MediaMetadata
-                        {
-                            Title = parsed.Title,
-                            Season = parsed.Season,
-                            Episode = parsed.Episode,
-                            Type = parsed.Type
-                        };
-                    }
-                }
-                else
-                {
-                    metadata = await EnsureMetadataInCacheAsync(parsed, isOfflineMode);
-
-                    if (metadata == null)
-                    {
-                        _log($"No metadata found even after attempting to fetch: {parsed.Title}");
+                        _log($"[Skipped] Title could not be parsed from filename: {Path.GetFileName(file)}");
                         continue;
                     }
+
+                    string episodeKey = $"{parsed.Title}|S{parsed.Season}|E{parsed.Episode}";
+                    if (!processed.Add(episodeKey))
+                    {
+                        _log($"[Skipped duplicate] {episodeKey}");
+                        continue;
+                    }
+
+                    MediaMetadata? metadata;
+
+                    if (isOfflineMode)
+                    {
+                        _log($"[OFFLINE] Attempting to load from cache only: {parsed.Title}");
+                        metadata = await TryLoadFromCacheOnly(parsed);
+
+                        if (metadata == null)
+                        {
+                            _log($"[OFFLINE] No cached metadata for '{parsed.Title}', using filename data.");
+                            metadata = new MediaMetadata
+                            {
+                                Title = parsed.Title,
+                                Season = parsed.Season,
+                                Episode = parsed.Episode,
+                                Type = parsed.Type
+                            };
+                        }
+                    }
+                    else
+                    {
+                        metadata = await EnsureMetadataInCacheAsync(parsed, isOfflineMode);
+
+                        if (metadata == null)
+                        {
+                            _log($"[Failure] No metadata found for: {parsed.Title}. Skipping.");
+                            continue;
+                        }
+                    }
+
+                    if (metadata.Type == "Series")
+                        _log($"[Organizing] {metadata.Title} S{metadata.Season:D2}E{metadata.Episode:D2} – {metadata.EpisodeTitle}");
+                    else
+                        _log($"[Organizing] Movie: {metadata.Title}");
+
+                    await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
                 }
-
-                if (metadata.Type == "Series")
-                    _log($"Preparing to save episode: {metadata.Title} S{metadata.Season:D2}E{metadata.Episode:D2} – {metadata.EpisodeTitle}");
-                else
-                    _log($"Preparing to save movie: {metadata.Title}");
-
-                await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
-
-                // Report progress as a percentage
-                processedCount++;
-                progress?.Report((int)((processedCount / (double)totalFiles) * 100));
+                catch (Exception ex)
+                {
+                    _log($"[ERROR] Failed to process '{Path.GetFileName(file)}': {ex.Message}");
+                }
+                finally
+                {
+                    processedCount++;
+                    // Spread 99% of the progress across the files, starting from 1%
+                    double progressOffset = 1.0 + (processedCount / (double)totalFiles) * 99.0;
+                    progress?.Report((int)progressOffset);
+                }
             }
         }
+
+
+
 
         private async Task<MediaMetadata?> TryLoadFromCacheOnly(ParsedMediaInfo parsed)
         {

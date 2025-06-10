@@ -36,7 +36,7 @@ namespace ShowStasher.Helpers
 
             // Source and Release Groups
             "WEBRip", "WEB-DL", "BluRay", "BRRip", "BDRip", "DVDRip", "HDTV", "CAM", "TS", "TC", "SCREENER",
-            "NF", "AMZN", "HMAX", "DSNP", "HULU", "iT", "ATVP", "PCOK", "STAN", "MUBI", "PLAY",
+            "NF", "AMZN", "HMAX", "DSNP", "HULU", "iT", "ATVP", "PCOK", "STAN", "MUBI", "PLAY", "BONE",
 
             // Encoding and Codecs
             "x264", "x265", "HEVC", "AVC", "H.264", "H.265", "10bit", "8bit",

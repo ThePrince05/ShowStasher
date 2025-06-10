@@ -31,6 +31,8 @@ namespace ShowStasher.MVVM.ViewModels
         [ObservableProperty]
         private string? selectedLogMessage;
 
+        public ObservableCollection<string> SelectedLogMessages { get; } = new();
+
         [ObservableProperty]
         private bool isOfflineMode;
 
@@ -85,12 +87,14 @@ namespace ShowStasher.MVVM.ViewModels
         [RelayCommand(CanExecute = nameof(CanCopySelectedLog))]
         private void CopySelectedLog()
         {
-            if (!string.IsNullOrWhiteSpace(SelectedLogMessage))
+            if (SelectedLogMessages.Any())
             {
-                Clipboard.SetText(SelectedLogMessage);
-                StatusMessage = "Copied selected log to clipboard.";
+                var combined = string.Join(Environment.NewLine, SelectedLogMessages);
+                Clipboard.SetText(combined);
+                StatusMessage = "Copied selected logs to clipboard.";
             }
         }
+
 
         [RelayCommand]
         private void ClearLogs()
@@ -106,7 +110,8 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
-        private bool CanCopySelectedLog() => !string.IsNullOrWhiteSpace(SelectedLogMessage);
+        private bool CanCopySelectedLog() => SelectedLogMessages.Any();
+
 
 
 

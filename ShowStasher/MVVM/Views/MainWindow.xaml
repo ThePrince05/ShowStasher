@@ -3,8 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ShowStasher"
+        xmlns:converters="clr-namespace:ShowStasher.Converters"
         xmlns:vm="clr-namespace:ShowStasher.MVVM.ViewModels"
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:behaviours="clr-namespace:ShowStasher.Helpers"
         Title="ShowStasher" Height="500" Width="600"
         WindowStartupLocation="CenterScreen">
     
@@ -13,7 +15,72 @@
     </Window.DataContext>
 
     <Window.Resources>
+        <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="GlowingProgressBar"
+               TargetType="ProgressBar">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="#ddd"
+                                    CornerRadius="5"
+                                    BorderThickness="1"
+                                    BorderBrush="Gray" />
+
+                            <Border x:Name="PART_GlowBar"
+                                    Background="DodgerBlue"
+                                    CornerRadius="5"
+                                    HorizontalAlignment="Left"
+                                    Height="{TemplateBinding Height}">
+                                <Border.Width>
+                                    <MultiBinding Converter="{StaticResource ProgressToWidthConverter}">
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                 Path="Value" />
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                 Path="Maximum" />
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                 Path="ActualWidth" />
+                                    </MultiBinding>
+                                </Border.Width>
+                                <Border.Effect>
+                                    <DropShadowEffect x:Name="GlowEffect"
+                                                      Color="DodgerBlue"
+                                                      BlurRadius="10"
+                                                      ShadowDepth="0"
+                                                      Opacity="1" />
+                                </Border.Effect>
+                            </Border>
+
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsIndeterminate"
+                                     Value="False">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever"
+                                                    AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetName="GlowEffect"
+                                                             Storyboard.TargetProperty="BlurRadius"
+                                                             From="10"
+                                                             To="30"
+                                                             Duration="0:0:8" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                            <Trigger Property="IsIndeterminate"
+                                     Value="True">
+                                <Setter TargetName="PART_GlowBar"
+                                        Property="Background"
+                                        Value="LightGray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -122,12 +189,14 @@
             
             <!-- Progress Bar -->
             <ProgressBar Grid.Row="1"
+                         Style="{StaticResource GlowingProgressBar}"
                          Margin="0,2,0,10"
                          Height="20"
                          Minimum="0"
                          Maximum="100"
                          Value="{Binding Progress}"
                          Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
         </Grid>
 
         <!-- Logs -->
@@ -137,9 +206,10 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ListBox ItemsSource="{Binding LogMessages}"
                          SelectedItem="{Binding SelectedLogMessage, Mode=TwoWay}"
+                         behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
                          FontFamily="Consolas"
                          FontSize="12"
-                         SelectionMode="Single"
+                         SelectionMode="Extended"
                          Padding="5">
 
                     <ListBox.ItemTemplate>
