@@ -1,0 +1,20 @@
+﻿ShowStasher
+1.0.0.0
+
+winexe
+C#
+.cs
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\obj\Debug\net8.0-windows10.0.17763.0\
+ShowStasher
+none
+false
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP
+D:\Projects\Visual Studio\ShowStasher\ShowStasher\App.xaml
+21104088608
+1252317432
+322012973405
+2331766972463
+MVVM\Views\MainWindow.xaml;MVVM\Views\PreviewDialog.xaml;
+
+True
+

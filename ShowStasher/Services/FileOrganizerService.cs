@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ShowStasher.Helpers;
 using System.Net.Http;
 using System.Globalization;
+using System.Collections.ObjectModel;
 
 namespace ShowStasher.Services
 {
@@ -19,6 +20,7 @@ namespace ShowStasher.Services
         private readonly JikanService _jikanService;
         private readonly MetadataCacheService _cacheService;
 
+
         public FileOrganizerService(Action<string> log, TMDbService tmdbService, JikanService jikanService, MetadataCacheService cacheService)
         {
             _log = log;
@@ -27,28 +29,32 @@ namespace ShowStasher.Services
             _cacheService = cacheService;
         }
 
-        public async Task OrganizeFilesAsync(string sourceFolder, string destinationFolder, bool isOfflineMode, IProgress<int>? progress = null)
-        {
-            var allowedExtensions = new[] { ".mp4", ".mkv", ".avi", ".mov" };
-            var files = Directory.GetFiles(sourceFolder)
-                                 .Where(f => allowedExtensions.Contains(Path.GetExtension(f).ToLower()))
-                                 .ToList();
+            public async Task OrganizeFilesAsync(
+            IEnumerable<PreviewItem> selectedItems,
+            string destinationFolder,
+            bool isOfflineMode,
+            IProgress<int>? progress = null)
+            {
+                var selectedFiles = selectedItems
+                    .SelectMany(item => GetAllFiles(item))
+                    .Distinct()
+                    .ToList();
 
-            var processed = new HashSet<string>();
-            int totalFiles = files.Count;
+            int totalFiles = selectedFiles.Count;
             int processedCount = 0;
 
-            // Kickstart the progress at 1%
             progress?.Report(1);
 
             if (totalFiles == 0)
             {
-                _log("[Info] No video files found to process.");
+                _log("[Info] No files selected to process.");
                 progress?.Report(100);
                 return;
             }
 
-            foreach (var file in files)
+            var processedEpisodes = new HashSet<string>();
+
+            foreach (var file in selectedFiles)
             {
                 try
                 {
@@ -60,7 +66,7 @@ namespace ShowStasher.Services
                     }
 
                     string episodeKey = $"{parsed.Title}|S{parsed.Season}|E{parsed.Episode}";
-                    if (!processed.Add(episodeKey))
+                    if (!processedEpisodes.Add(episodeKey))
                     {
                         _log($"[Skipped duplicate] {episodeKey}");
                         continue;
@@ -110,13 +116,27 @@ namespace ShowStasher.Services
                 finally
                 {
                     processedCount++;
-                    // Spread 99% of the progress across the files, starting from 1%
                     double progressOffset = 1.0 + (processedCount / (double)totalFiles) * 99.0;
                     progress?.Report((int)progressOffset);
                 }
             }
         }
 
+        private IEnumerable<string> GetAllFiles(PreviewItem item)
+        {
+            if (item.IsFile && !string.IsNullOrEmpty(item.SourcePath))
+            {
+                yield return item.SourcePath;
+            }
+            else if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    foreach (var f in GetAllFiles(child))
+                        yield return f;
+                }
+            }
+        }
 
 
 
@@ -411,6 +431,175 @@ namespace ShowStasher.Services
                 return Path.Combine(root, "Unknown", safeTitle);
             }
         }
+
+        public async Task<ObservableCollection<PreviewItem>> GetDryRunTreeAsync(string sourceFolder, bool isOfflineMode)
+        {
+            var rootItems = new ObservableCollection<PreviewItem>();
+            var allFiles = Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories);
+
+            // Avoid duplicate synopsis/poster additions
+            var addedExtras = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in allFiles)
+            {
+                var parsed = FilenameParser.Parse(file);
+                if (string.IsNullOrWhiteSpace(parsed.Title))
+                {
+                    _log($"[DryRun] Skipping: Couldn't parse title from {file}");
+                    continue;
+                }
+
+                var metadata = await EnsureMetadataInCacheAsync(parsed, isOfflineMode);
+                if (metadata == null)
+                {
+                    metadata = new MediaMetadata
+                    {
+                        Title = parsed.Title,
+                        Type = parsed.Type,
+                        Season = parsed.Season,
+                        Episode = parsed.Episode
+                    };
+                }
+
+                // Build destination path
+                string relativeDestination = GetRelativeDestinationPath(Path.GetFileName(file), metadata);
+                string[] pathParts = Path.Combine("PREVIEW_ROOT", relativeDestination)
+                                     .Split(Path.DirectorySeparatorChar)
+                                     .Select(ToTitleCase)
+                                     .ToArray();
+
+                // Add media file to preview
+                AddFileToPreviewTree(rootItems, pathParts, file);
+
+                // Determine metadata root folder for extras (TV Series/<Title> or Movies/<Title>)
+                // Determine metadata root folder for extras (TV Series/<Title> or Movies/<Title>)
+                string metadataRoot;
+                if (metadata.Type == "Series" && pathParts.Length >= 4)
+                {
+                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]); // e.g. Preview_Root/TV Series/Y/Yaiba Samurai Legend
+                }
+                else if (metadata.Type == "Movie" && pathParts.Length >= 4)
+                {
+                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]); // ✅ e.g. Preview_Root/Movies/S/Sinners
+                }
+                else
+                {
+                    _log($"[DryRun] Skipping metadata extras for {file}, invalid folder structure.");
+                    continue;
+                }
+
+
+                // Only add extras if online and not yet added
+                if (!isOfflineMode && addedExtras.Add(metadataRoot))
+                {
+                    if (!string.IsNullOrWhiteSpace(metadata.Synopsis))
+                    {
+                        AddFileToPreviewTree(rootItems,
+                            Path.Combine(metadataRoot, "synopsis.txt").Split(Path.DirectorySeparatorChar),
+                            null);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(metadata.PosterUrl))
+                    {
+                        AddFileToPreviewTree(rootItems,
+                            Path.Combine(metadataRoot, "poster.jpg").Split(Path.DirectorySeparatorChar),
+                            null);
+                    }
+                }
+            }
+
+            return rootItems;
+        }
+
+
+
+
+        private void AddFileToPreviewTree(ObservableCollection<PreviewItem> rootItems, string[] pathParts, string sourceFile)
+        {
+            var current = rootItems;
+            PreviewItem? parent = null;
+
+            foreach (var part in pathParts[..^1]) // All but the last part, which is the file name
+            {
+                var folderName = ToTitleCase(part);
+
+                var existing = current.FirstOrDefault(p => p.Name == folderName && !p.IsFile);
+                if (existing == null)
+                {
+                    existing = new PreviewItem
+                    {
+                        Name = folderName,
+                        IsFile = false,
+                        Children = new ObservableCollection<PreviewItem>()
+                    };
+                    current.Add(existing);
+                }
+
+                parent = existing;
+                current = existing.Children;
+            }
+
+            // Last part is the file name, don't title-case it
+            string fileName = Path.GetFileName(sourceFile);
+
+            if (current != null)
+            {
+                current.Add(new PreviewItem
+                {
+                    Name = fileName,
+                    SourcePath = sourceFile,
+                    DestinationPath = Path.Combine(pathParts), // Use original path parts for destination
+                    IsFile = true
+                });
+            }
+        }
+
+
+        public string GetRelativeDestinationPath(string sourceFilePath, MediaMetadata metadata)
+        {
+            string fileName;
+
+            if (metadata.Type == "Movie")
+            {
+                fileName = Path.GetFileName(sourceFilePath);
+                var firstLetter = GetFirstLetter(metadata.Title);
+                return Path.Combine("Movies", firstLetter, metadata.Title, fileName);
+            }
+            else if (metadata.Type == "Series")
+            {
+                var safeEpisodeTitle = string.IsNullOrEmpty(metadata.EpisodeTitle)
+                    ? $"Episode {metadata.Episode:D2}"
+                    : $"Episode {metadata.Episode:D2} - {Sanitize(metadata.EpisodeTitle)}";
+
+                var extension = Path.GetExtension(sourceFilePath);
+                var episodeFile = $"{safeEpisodeTitle}{extension}";
+                var firstLetter = GetFirstLetter(metadata.Title);
+
+                return Path.Combine("TV Series", firstLetter, metadata.Title, $"Season {metadata.Season}", episodeFile);
+            }
+            else
+            {
+                // Fallback
+                return Path.GetFileName(sourceFilePath);
+            }
+        }
+
+        private string GetFirstLetter(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return "#";
+
+            char first = char.ToUpper(title[0]);
+            return char.IsLetter(first) ? first.ToString() : "#";
+        }
+
+        private string Sanitize(string input)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+                input = input.Replace(c, '_');
+            return input;
+        }
+
 
         private void SaveSynopsis(string folder, MediaMetadata metadata)
         {

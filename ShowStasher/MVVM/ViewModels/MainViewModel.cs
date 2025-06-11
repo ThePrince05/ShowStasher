@@ -1,14 +1,19 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ShowStasher.MVVM.Models;
+using ShowStasher.MVVM.Views;
 using ShowStasher.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Linq;
+using System.Windows;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Clipboard = System.Windows.Clipboard;
+using Application = System.Windows.Application;
 
 
 
@@ -137,8 +142,9 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
+
         [RelayCommand]
-        private async Task OrganizeFilesAsync()
+        private async Task PreviewAndOrganizeAsync()
         {
             if (string.IsNullOrEmpty(SourcePath) || string.IsNullOrEmpty(DestinationPath))
             {
@@ -147,21 +153,63 @@ namespace ShowStasher.MVVM.ViewModels
                 return;
             }
 
-            StatusMessage = "Organizing files...";
-            Log("Started organizing...");
+            StatusMessage = "Preparing preview...";
+            Log("Generating dry run preview...");
             IsBusy = true;
             Progress = 0;
 
-            var progressReporter = new Progress<int>(percent =>
-            {
-                Progress = percent;
-            });
-
             try
             {
-                await _fileOrganizerService.OrganizeFilesAsync(SourcePath, DestinationPath, IsOfflineMode, progressReporter);
+                var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
+
+                var previewViewModel = new PreviewViewModel();
+                
+                previewViewModel.RootItems.Clear();
+                foreach (var item in previewItems)
+                {
+                    previewViewModel.RootItems.Add(item);
+                }
+
+
+                var tcs = new TaskCompletionSource<IList<PreviewItem>>();
+
+                previewViewModel.OnConfirm = selectedFiles =>
+                {
+                    tcs.SetResult(selectedFiles);
+                };
+
+                previewViewModel.OnCancel = () =>
+                {
+                    tcs.SetResult(new List<PreviewItem>());
+                };
+
+                var dialog = new PreviewDialog
+                {
+                    DataContext = previewViewModel,
+                    Owner = Application.Current.MainWindow
+                };
+
+                dialog.ShowDialog();
+
+                var selectedFilesToOrganize = await tcs.Task;
+
+                if (selectedFilesToOrganize.Count == 0)
+                {
+                    StatusMessage = "Organization canceled.";
+                    Log("User canceled file organization.");
+                    return;
+                }
+
+                StatusMessage = "Organizing selected files...";
+                Log("Started organizing selected files...");
+
+                var progressReporter = new Progress<int>(percent => Progress = percent);
+
+                await _fileOrganizerService.OrganizeFilesAsync(
+                    selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter);
+
                 StatusMessage = "Done!";
-                Log("Finished organizing files.");
+                Log("Finished organizing selected files.");
             }
             catch (Exception ex)
             {
@@ -172,8 +220,22 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 IsBusy = false;
             }
+
         }
 
+
+        private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
+        {
+            var files = new List<PreviewItem>();
+            foreach (var item in items)
+            {
+                if (item.IsFile && item.IsChecked)
+                    files.Add(item);
+                else
+                    files.AddRange(GetCheckedFiles(item.Children));
+            }
+            return files;
+        }
 
         private void Log(string message)
         {

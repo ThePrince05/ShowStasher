@@ -163,7 +163,7 @@
             <!-- Organize -->
             <Button Grid.Column="0"
                     Content="Organize Files"
-                    Command="{Binding OrganizeFilesCommand}"
+                    Command="{Binding PreviewAndOrganizeCommand}"
                     Width="150"
                     Height="40"
                     HorizontalAlignment="Left"
