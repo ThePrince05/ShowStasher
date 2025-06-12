@@ -13,18 +13,33 @@ namespace ShowStasher.MVVM.ViewModels
     public partial class PreviewViewModel : ObservableObject
     {
         public ObservableCollection<PreviewItem> RootItems { get; } = new();
+        public Action? RequestClose { get; set; }
+      
+
+        private bool _hasResponded;
+
+        public bool HasResponded
+        {
+            get => _hasResponded;
+            set => SetProperty(ref _hasResponded, value);
+        }
 
         [RelayCommand]
         private void Confirm()
         {
-            var selectedFiles = GetCheckedFiles(RootItems);
-            OnConfirm?.Invoke(selectedFiles);
+            if (HasResponded) return;
+            HasResponded = true;
+            OnConfirm?.Invoke(GetCheckedFiles(RootItems));
+            RequestClose?.Invoke();
         }
 
         [RelayCommand]
         private void Cancel()
         {
+            if (HasResponded) return;
+            HasResponded = true;
             OnCancel?.Invoke();
+            RequestClose?.Invoke();
         }
 
         public Action<List<PreviewItem>>? OnConfirm;

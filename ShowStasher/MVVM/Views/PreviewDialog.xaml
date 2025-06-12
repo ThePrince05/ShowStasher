@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="Preview Organization"
         Height="500"
-        Width="600"
+        Width="700"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
 
@@ -17,7 +17,7 @@
     <Window.Resources>
         <!-- Converter to pick folder vs file icon -->
         <converters:FolderFileIconConverter x:Key="FolderFileIconConverter" />
-
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <!-- Template for file nodes with rename preview -->
         <DataTemplate x:Key="RenameTemplate">
             <TextBlock VerticalAlignment="Center"
@@ -72,7 +72,9 @@
                         <!-- Checkbox -->
                         <CheckBox IsChecked="{Binding IsChecked}"
                                   VerticalAlignment="Center"
-                                  Margin="0,0,5,0" />
+                                  Margin="0,0,5,0"
+                                  Visibility="{Binding ShowCheckbox, Converter={StaticResource BoolToVisibilityConverter}}" />
+
 
                         <!-- Icon -->
                         <Image Width="16"

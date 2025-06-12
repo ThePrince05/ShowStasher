@@ -521,110 +521,104 @@ namespace ShowStasher.Services
 
 
         private void AddFileToPreviewTree(
-     ObservableCollection<PreviewItem> rootItems,
-     string[] pathParts,
-     string? sourceFile,
-     string? renamedFilename = null)
-        {
-            var current = rootItems;
-            // We'll build the actual destination path segments separately:
-            var accumulatedPathSegments = new List<string>();
-
-            for (int i = 0; i < pathParts.Length; i++)
+        ObservableCollection<PreviewItem> rootItems,
+        string[] pathParts,
+        string? sourceFile,
+        string? renamedFilename = null)
             {
-                bool isLast = (i == pathParts.Length - 1);
-                string rawPart = pathParts[i];
+                var current = rootItems;
+                var accumulatedPathSegments = new List<string>();
 
-                string nodeName;            // the text shown in the tree (may be "Original → Renamed")
-                string folderOrFileForPath; // the segment to add to DestinationPath
-
-                if (isLast)
+                for (int i = 0; i < pathParts.Length; i++)
                 {
-                    if (sourceFile != null)
-                    {
-                        // It's a real file. Get original base name and extension:
-                        string originalName = Path.GetFileNameWithoutExtension(sourceFile);
-                        string extension = Path.GetExtension(sourceFile);
+                    bool isLast = (i == pathParts.Length - 1);
+                    string rawPart = pathParts[i];
 
-                        // Determine renamed base name (no extension). If none provided, keep original.
-                        string displayRenamedBase = renamedFilename ?? originalName;
+                    string nodeName;
+                    string folderOrFileForPath;
 
-                        // UI node: "Original → Renamed"
-                        nodeName = $"{originalName} → {displayRenamedBase}";
-
-                        // For the actual destination path, we want the renamed filename + extension:
-                        folderOrFileForPath = displayRenamedBase + extension;
-                    }
-                    else
-                    {
-                        // Metadata file, e.g. "synopsis.txt" or "poster.jpg". rawPart is already that.
-                        nodeName = rawPart;
-                        folderOrFileForPath = rawPart;
-                    }
-                }
-                else
-                {
-                    // Intermediate folder: title-case for display and path
-                    string folderName = ToTitleCase(rawPart);
-                    nodeName = folderName;
-                    folderOrFileForPath = folderName;
-                }
-
-                // Add the correct segment to the destination path segments:
-                accumulatedPathSegments.Add(folderOrFileForPath);
-
-                // Build the DestinationPath string from accumulatedPathSegments
-                string destinationPath = Path.Combine(accumulatedPathSegments.ToArray());
-
-                // Look for an existing node with this Name and IsFile status
-                var existing = current.FirstOrDefault(p =>
-                    string.Equals(p.Name, nodeName, StringComparison.OrdinalIgnoreCase)
-                    && p.IsFile == isLast);
-
-                if (existing == null)
-                {
-                    // Create a new PreviewItem
-                    existing = new PreviewItem
-                    {
-                        Name = nodeName,
-                        OriginalName = isLast && sourceFile != null
-                                       ? Path.GetFileNameWithoutExtension(sourceFile)
-                                       : null,
-                        RenamedName = isLast && sourceFile != null
-                                      ? (renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile))
-                                      : null,
-                        IsFile = isLast,
-                        IsFolder = !isLast,
-                        SourcePath = isLast ? sourceFile : null,
-                        DestinationPath = destinationPath,
-                        Children = new ObservableCollection<PreviewItem>()
-                    };
-                    current.Add(existing);
-                }
-                else
-                {
-                    // Update flags/properties in case reused
-                    existing.IsFile = isLast;
-                    existing.IsFolder = !isLast;
-                    existing.DestinationPath = destinationPath;
                     if (isLast)
                     {
-                        existing.SourcePath = sourceFile;
-                        existing.OriginalName = Path.GetFileNameWithoutExtension(sourceFile!);
-                        existing.RenamedName = renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile!);
+                        if (sourceFile != null)
+                        {
+                            string originalName = Path.GetFileNameWithoutExtension(sourceFile);
+                            string extension = Path.GetExtension(sourceFile);
+                            string displayRenamedBase = renamedFilename ?? originalName;
+                            nodeName = $"{originalName} → {displayRenamedBase}";
+                            folderOrFileForPath = displayRenamedBase + extension;
+                        }
+                        else
+                        {
+                            nodeName = rawPart;
+                            folderOrFileForPath = rawPart;
+                        }
                     }
                     else
                     {
-                        existing.OriginalName = null;
-                        existing.RenamedName = null;
-                        existing.SourcePath = null;
+                        string folderName = ToTitleCase(rawPart);
+                        nodeName = folderName;
+                        folderOrFileForPath = folderName;
                     }
-                }
 
-                // Descend into children for the next level
-                current = existing.Children;
-            }
+                    accumulatedPathSegments.Add(folderOrFileForPath);
+                    string destinationPath = Path.Combine(accumulatedPathSegments.ToArray());
+
+                    var existing = current.FirstOrDefault(p =>
+                        string.Equals(p.Name, nodeName, StringComparison.OrdinalIgnoreCase)
+                        && p.IsFile == isLast);
+
+                    bool shouldShowCheckbox = (!isLast && i == 3);
+                    // i==3 and not last: the folder node at depth 3: e.g., "Sinners" or "Yaiba Samurai Legend"
+
+                    if (existing == null)
+                    {
+                        existing = new PreviewItem
+                        {
+                            Name = nodeName,
+                            OriginalName = isLast && sourceFile != null
+                                           ? Path.GetFileNameWithoutExtension(sourceFile)
+                                           : null,
+                            RenamedName = isLast && sourceFile != null
+                                          ? (renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile))
+                                          : null,
+                            IsFile = isLast,
+                            IsFolder = !isLast,
+                            SourcePath = isLast ? sourceFile : null,
+                            DestinationPath = destinationPath,
+                            Children = new ObservableCollection<PreviewItem>(),
+                            ShowCheckbox = shouldShowCheckbox,
+                            IsChecked = true  // default; user can uncheck later
+                        };
+                        current.Add(existing);
+                    }
+                    else
+                    {
+                        // Update flags/properties in case reused. Also update ShowCheckbox each time.
+                        existing.IsFile = isLast;
+                        existing.IsFolder = !isLast;
+                        existing.DestinationPath = destinationPath;
+
+                        existing.ShowCheckbox = shouldShowCheckbox;
+
+                        if (isLast)
+                        {
+                            existing.SourcePath = sourceFile;
+                            existing.OriginalName = Path.GetFileNameWithoutExtension(sourceFile!);
+                            existing.RenamedName = renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile!);
+                            // Often for files we do not show checkbox, but ShowCheckbox is false for isLast anyway
+                        }
+                        else
+                        {
+                            existing.OriginalName = null;
+                            existing.RenamedName = null;
+                            existing.SourcePath = null;
+                        }
+                    }
+
+                    current = existing.Children;
+                }
         }
+
 
 
         public string GetRelativeDestinationPath(string sourceFilePath, MediaMetadata metadata)

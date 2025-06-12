@@ -163,32 +163,35 @@ namespace ShowStasher.MVVM.ViewModels
                 var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
 
                 var previewViewModel = new PreviewViewModel();
-                
+                // Fill preview items
                 previewViewModel.RootItems.Clear();
                 foreach (var item in previewItems)
                 {
                     previewViewModel.RootItems.Add(item);
                 }
 
-
-                var tcs = new TaskCompletionSource<IList<PreviewItem>>();
-
-                previewViewModel.OnConfirm = selectedFiles =>
-                {
-                    tcs.SetResult(selectedFiles);
-                };
-
-                previewViewModel.OnCancel = () =>
-                {
-                    tcs.SetResult(new List<PreviewItem>());
-                };
-
+                // Create dialog first
                 var dialog = new PreviewDialog
                 {
                     DataContext = previewViewModel,
                     Owner = Application.Current.MainWindow
                 };
 
+                // Hook RequestClose after dialog exists
+                previewViewModel.RequestClose = () => dialog.Close();
+
+                // Use TrySetResult on tcs:
+                var tcs = new TaskCompletionSource<IList<PreviewItem>>();
+                previewViewModel.OnConfirm = selectedFiles =>
+                {
+                    tcs.TrySetResult(selectedFiles);
+                };
+                previewViewModel.OnCancel = () =>
+                {
+                    tcs.TrySetResult(new List<PreviewItem>());
+                };
+
+                // Show the preview dialog
                 dialog.ShowDialog();
 
                 var selectedFilesToOrganize = await tcs.Task;

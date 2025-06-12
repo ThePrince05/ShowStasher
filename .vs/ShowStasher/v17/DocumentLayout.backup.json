@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "D:\\Projects\\Visual Studio\\ShowStasher\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\previewdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\previewdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\fileorganizerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -15,20 +15,12 @@
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\previewdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\previewdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\models\\previewitemtemplateselector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\models\\previewitemtemplateselector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\models\\previewitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\models\\previewitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\converters\\folderfileiconconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\converters\\folderfileiconconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\previewdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\previewdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\viewmodels\\previewviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -37,26 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\helpers\\filenameparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\helpers\\filenameparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\metadatacacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\metadatacacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\converters\\progresstowidthconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\converters\\progresstowidthconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\jikanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\services\\jikanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\services\\tmdbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -70,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 15,
+          "SelectedChildIndex": 9,
           "Children": [
             {
               "$type": "Bookmark",
@@ -107,31 +79,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "PreviewItemTemplateSelector.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Models\\PreviewItemTemplateSelector.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Models\\PreviewItemTemplateSelector.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Models\\PreviewItemTemplateSelector.cs",
-              "RelativeToolTip": "ShowStasher\\MVVM\\Models\\PreviewItemTemplateSelector.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAAABoAAAARAAAAAAAAAA==",
+              "Title": "PreviewDialog.xaml.cs",
+              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\PreviewDialog.xaml.cs",
+              "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Views\\PreviewDialog.xaml.cs",
+              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\PreviewDialog.xaml.cs",
+              "RelativeToolTip": "ShowStasher\\MVVM\\Views\\PreviewDialog.xaml.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAADwvykAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-12T04:38:30.421Z",
+              "WhenOpened": "2025-06-12T11:26:44.949Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "FolderFileIconConverter.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Converters\\FolderFileIconConverter.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\Converters\\FolderFileIconConverter.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Converters\\FolderFileIconConverter.cs",
-              "RelativeToolTip": "ShowStasher\\Converters\\FolderFileIconConverter.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAuwA4AAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-11T11:46:03.571Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "PreviewDialog.xaml",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\PreviewDialog.xaml",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Views\\PreviewDialog.xaml",
@@ -143,100 +103,29 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 5,
               "Title": "PreviewViewModel.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
               "RelativeToolTip": "ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAcwCsAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAACQAAAAAAAAAAAA9wDkAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-10T13:17:56.071Z"
+              "WhenOpened": "2025-06-10T13:17:56.071Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
               "Title": "PreviewItem.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Models\\PreviewItem.cs",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Models\\PreviewItem.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Models\\PreviewItem.cs",
               "RelativeToolTip": "ShowStasher\\MVVM\\Models\\PreviewItem.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAoAAAAEAAAAAAAAAA==",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAwBoAAAAGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-10T13:15:25.473Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "ProgressToWidthConverter.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Converters\\ProgressToWidthConverter.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\Converters\\ProgressToWidthConverter.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Converters\\ProgressToWidthConverter.cs",
-              "RelativeToolTip": "ShowStasher\\Converters\\ProgressToWidthConverter.cs",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAQwAsAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-10T03:24:28.249Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "App.xaml.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\App.xaml.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\App.xaml.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\App.xaml.cs",
-              "RelativeToolTip": "ShowStasher\\App.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-10T03:22:25.838Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "App.xaml",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\App.xaml",
-              "RelativeDocumentMoniker": "ShowStasher\\App.xaml",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\App.xaml",
-              "RelativeToolTip": "ShowStasher\\App.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-06-09T09:59:38.125Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "JikanService.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\JikanService.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\Services\\JikanService.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\JikanService.cs",
-              "RelativeToolTip": "ShowStasher\\Services\\JikanService.cs",
-              "ViewState": "AgIAAKQAAAAAAAAAAAAuwMoAAABWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-02T14:14:43.125Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "MetadataCacheService.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\MetadataCacheService.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\Services\\MetadataCacheService.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\MetadataCacheService.cs",
-              "RelativeToolTip": "ShowStasher\\Services\\MetadataCacheService.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAADwvzEAAAAbAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-19T04:38:41.997Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "FilenameParser.cs",
-              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Helpers\\FilenameParser.cs",
-              "RelativeDocumentMoniker": "ShowStasher\\Helpers\\FilenameParser.cs",
-              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Helpers\\FilenameParser.cs",
-              "RelativeToolTip": "ShowStasher\\Helpers\\FilenameParser.cs",
-              "ViewState": "AgIAAHgAAAAAAAAAAAAUwIcAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-17T12:48:18.863Z"
             },
             {
               "$type": "Document",
@@ -246,21 +135,22 @@
               "RelativeDocumentMoniker": "ShowStasher\\Services\\FileOrganizerService.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeToolTip": "ShowStasher\\Services\\FileOrganizerService.cs",
-              "ViewState": "AgIAAHICAAAAAAAAAAAmwHYCAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAFECAAAAAAAAAAAowGMCAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-16T15:28:56.676Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 6,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\MainWindow.xaml",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Views\\MainWindow.xaml",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\MainWindow.xaml",
               "RelativeToolTip": "ShowStasher\\MVVM\\Views\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-05-16T12:10:40Z"
+              "WhenOpened": "2025-05-16T12:10:40Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -270,14 +160,14 @@
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "RelativeToolTip": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
-              "ViewState": "AgIAAKgAAAAAAAAAAAAQwLIAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAJkAAAAAAAAAAAAAAKIAAABDAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-16T12:01:18.84Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 7,
               "Title": "TMDbService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\TMDbService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\TMDbService.cs",
