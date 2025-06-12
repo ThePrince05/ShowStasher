@@ -437,7 +437,6 @@ namespace ShowStasher.Services
             var rootItems = new ObservableCollection<PreviewItem>();
             var allFiles = Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories);
 
-            // Avoid duplicate synopsis/poster additions
             var addedExtras = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var file in allFiles)
@@ -461,26 +460,29 @@ namespace ShowStasher.Services
                     };
                 }
 
-                // Build destination path
-                string relativeDestination = GetRelativeDestinationPath(Path.GetFileName(file), metadata);
-                string[] pathParts = Path.Combine("PREVIEW_ROOT", relativeDestination)
-                                     .Split(Path.DirectorySeparatorChar)
-                                     .Select(ToTitleCase)
-                                     .ToArray();
+                // Compute destination relative path
+                string relativeDestination = GetRelativeDestinationPath(Path.GetFileName(file), metadata); // includes renamed filename
+                string previewRootPrefix = "PREVIEW DESTINATION";
+
+                string fullRelativePath = Path.Combine(previewRootPrefix, relativeDestination); // Add virtual root
+                var pathParts = fullRelativePath.Split(Path.DirectorySeparatorChar);
+
+                // Extract clean base names
+                string originalBase = Path.GetFileNameWithoutExtension(file);
+                string renamedBase = Path.GetFileNameWithoutExtension(Path.GetFileName(relativeDestination));
 
                 // Add media file to preview
-                AddFileToPreviewTree(rootItems, pathParts, file);
+                AddFileToPreviewTree(rootItems, pathParts, file, renamedBase);
 
-                // Determine metadata root folder for extras (TV Series/<Title> or Movies/<Title>)
-                // Determine metadata root folder for extras (TV Series/<Title> or Movies/<Title>)
+                // Prepare metadata root folder path
                 string metadataRoot;
                 if (metadata.Type == "Series" && pathParts.Length >= 4)
                 {
-                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]); // e.g. Preview_Root/TV Series/Y/Yaiba Samurai Legend
+                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]);
                 }
                 else if (metadata.Type == "Movie" && pathParts.Length >= 4)
                 {
-                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]); // ✅ e.g. Preview_Root/Movies/S/Sinners
+                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]);
                 }
                 else
                 {
@@ -488,23 +490,26 @@ namespace ShowStasher.Services
                     continue;
                 }
 
-
-                // Only add extras if online and not yet added
-                if (!isOfflineMode && addedExtras.Add(metadataRoot))
+                // Only add metadata files once per movie/series root
+                if (!addedExtras.Contains(metadataRoot))
                 {
-                    if (!string.IsNullOrWhiteSpace(metadata.Synopsis))
-                    {
-                        AddFileToPreviewTree(rootItems,
-                            Path.Combine(metadataRoot, "synopsis.txt").Split(Path.DirectorySeparatorChar),
-                            null);
-                    }
+                    addedExtras.Add(metadataRoot);
 
-                    if (!string.IsNullOrWhiteSpace(metadata.PosterUrl))
-                    {
-                        AddFileToPreviewTree(rootItems,
-                            Path.Combine(metadataRoot, "poster.jpg").Split(Path.DirectorySeparatorChar),
-                            null);
-                    }
+                    var synopsisParts = metadataRoot
+                        .Split(Path.DirectorySeparatorChar)
+                        .Select(ToTitleCase)
+                        .Append("synopsis.txt")
+                        .ToArray();
+
+                    AddFileToPreviewTree(rootItems, synopsisParts, null);
+
+                    var posterParts = metadataRoot
+                        .Split(Path.DirectorySeparatorChar)
+                        .Select(ToTitleCase)
+                        .Append("poster.jpg")
+                        .ToArray();
+
+                    AddFileToPreviewTree(rootItems, posterParts, null);
                 }
             }
 
@@ -514,56 +519,150 @@ namespace ShowStasher.Services
 
 
 
-        private void AddFileToPreviewTree(ObservableCollection<PreviewItem> rootItems, string[] pathParts, string sourceFile)
+
+        private void AddFileToPreviewTree(
+     ObservableCollection<PreviewItem> rootItems,
+     string[] pathParts,
+     string? sourceFile,
+     string? renamedFilename = null)
         {
             var current = rootItems;
-            PreviewItem? parent = null;
+            // We'll build the actual destination path segments separately:
+            var accumulatedPathSegments = new List<string>();
 
-            foreach (var part in pathParts[..^1]) // All but the last part, which is the file name
+            for (int i = 0; i < pathParts.Length; i++)
             {
-                var folderName = ToTitleCase(part);
+                bool isLast = (i == pathParts.Length - 1);
+                string rawPart = pathParts[i];
 
-                var existing = current.FirstOrDefault(p => p.Name == folderName && !p.IsFile);
+                string nodeName;            // the text shown in the tree (may be "Original → Renamed")
+                string folderOrFileForPath; // the segment to add to DestinationPath
+
+                if (isLast)
+                {
+                    if (sourceFile != null)
+                    {
+                        // It's a real file. Get original base name and extension:
+                        string originalName = Path.GetFileNameWithoutExtension(sourceFile);
+                        string extension = Path.GetExtension(sourceFile);
+
+                        // Determine renamed base name (no extension). If none provided, keep original.
+                        string displayRenamedBase = renamedFilename ?? originalName;
+
+                        // UI node: "Original → Renamed"
+                        nodeName = $"{originalName} → {displayRenamedBase}";
+
+                        // For the actual destination path, we want the renamed filename + extension:
+                        folderOrFileForPath = displayRenamedBase + extension;
+                    }
+                    else
+                    {
+                        // Metadata file, e.g. "synopsis.txt" or "poster.jpg". rawPart is already that.
+                        nodeName = rawPart;
+                        folderOrFileForPath = rawPart;
+                    }
+                }
+                else
+                {
+                    // Intermediate folder: title-case for display and path
+                    string folderName = ToTitleCase(rawPart);
+                    nodeName = folderName;
+                    folderOrFileForPath = folderName;
+                }
+
+                // Add the correct segment to the destination path segments:
+                accumulatedPathSegments.Add(folderOrFileForPath);
+
+                // Build the DestinationPath string from accumulatedPathSegments
+                string destinationPath = Path.Combine(accumulatedPathSegments.ToArray());
+
+                // Look for an existing node with this Name and IsFile status
+                var existing = current.FirstOrDefault(p =>
+                    string.Equals(p.Name, nodeName, StringComparison.OrdinalIgnoreCase)
+                    && p.IsFile == isLast);
+
                 if (existing == null)
                 {
+                    // Create a new PreviewItem
                     existing = new PreviewItem
                     {
-                        Name = folderName,
-                        IsFile = false,
+                        Name = nodeName,
+                        OriginalName = isLast && sourceFile != null
+                                       ? Path.GetFileNameWithoutExtension(sourceFile)
+                                       : null,
+                        RenamedName = isLast && sourceFile != null
+                                      ? (renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile))
+                                      : null,
+                        IsFile = isLast,
+                        IsFolder = !isLast,
+                        SourcePath = isLast ? sourceFile : null,
+                        DestinationPath = destinationPath,
                         Children = new ObservableCollection<PreviewItem>()
                     };
                     current.Add(existing);
                 }
-
-                parent = existing;
-                current = existing.Children;
-            }
-
-            // Last part is the file name, don't title-case it
-            string fileName = Path.GetFileName(sourceFile);
-
-            if (current != null)
-            {
-                current.Add(new PreviewItem
+                else
                 {
-                    Name = fileName,
-                    SourcePath = sourceFile,
-                    DestinationPath = Path.Combine(pathParts), // Use original path parts for destination
-                    IsFile = true
-                });
+                    // Update flags/properties in case reused
+                    existing.IsFile = isLast;
+                    existing.IsFolder = !isLast;
+                    existing.DestinationPath = destinationPath;
+                    if (isLast)
+                    {
+                        existing.SourcePath = sourceFile;
+                        existing.OriginalName = Path.GetFileNameWithoutExtension(sourceFile!);
+                        existing.RenamedName = renamedFilename ?? Path.GetFileNameWithoutExtension(sourceFile!);
+                    }
+                    else
+                    {
+                        existing.OriginalName = null;
+                        existing.RenamedName = null;
+                        existing.SourcePath = null;
+                    }
+                }
+
+                // Descend into children for the next level
+                current = existing.Children;
             }
         }
 
 
         public string GetRelativeDestinationPath(string sourceFilePath, MediaMetadata metadata)
         {
-            string fileName;
+            string extension = Path.GetExtension(sourceFilePath) ?? "";
 
             if (metadata.Type == "Movie")
             {
-                fileName = Path.GetFileName(sourceFilePath);
-                var firstLetter = GetFirstLetter(metadata.Title);
-                return Path.Combine("Movies", firstLetter, metadata.Title, fileName);
+                // Sanitize movie title
+                string safeTitle = ToTitleCase(Sanitize(metadata.Title));
+
+                // Try to extract the year
+                string yearPart = "";
+                if (TryGetYearFromMetadata(metadata, out int metaYear) && metaYear > 0)
+                {
+                    yearPart = metaYear.ToString();
+                }
+                else
+                {
+                    // Fallback: Extract from original filename
+                    string originalBase = Path.GetFileNameWithoutExtension(sourceFilePath);
+                    var yearMatch = Regex.Match(originalBase, @"\b(19|20)\d{2}\b");
+                    if (yearMatch.Success)
+                    {
+                        yearPart = yearMatch.Value;
+                    }
+                }
+
+                // Folder: Sinners (2025)
+                string folderName = string.IsNullOrEmpty(yearPart)
+                    ? safeTitle
+                    : $"{safeTitle} ({yearPart})";
+
+                // Filename: Sinners.mp4
+                string newFileName = $"{safeTitle}{extension}";
+
+                var firstLetter = GetFirstLetter(safeTitle);
+                return Path.Combine("Movies", firstLetter, folderName, newFileName);
             }
             else if (metadata.Type == "Series")
             {
@@ -571,7 +670,7 @@ namespace ShowStasher.Services
                     ? $"Episode {metadata.Episode:D2}"
                     : $"Episode {metadata.Episode:D2} - {Sanitize(metadata.EpisodeTitle)}";
 
-                var extension = Path.GetExtension(sourceFilePath);
+                
                 var episodeFile = $"{safeEpisodeTitle}{extension}";
                 var firstLetter = GetFirstLetter(metadata.Title);
 
@@ -583,6 +682,21 @@ namespace ShowStasher.Services
                 return Path.GetFileName(sourceFilePath);
             }
         }
+
+        private bool TryGetYearFromMetadata(MediaMetadata metadata, out int year)
+        {
+            year = 0;
+            if (!string.IsNullOrEmpty(metadata.Year.ToString()))
+            {
+                var match = Regex.Match(metadata.Year.ToString(), @"\b(19|20)\d{2}\b");
+                if (match.Success && int.TryParse(match.Value, out year))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         private string GetFirstLetter(string title)
         {

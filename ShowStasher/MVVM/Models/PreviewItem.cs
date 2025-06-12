@@ -11,8 +11,11 @@ namespace ShowStasher.MVVM.Models
     public partial class PreviewItem
     {
         public string Name { get; set; } = "";
+        public string? OriginalName { get; set; }  
+        public string? RenamedName { get; set; }   
         public string SourcePath { get; set; } = "";
-        public string DestinationPath { get; set; } = ""; // NEW: where it *will* go
+        public bool IsFolder { get; set; } 
+        public string DestinationPath { get; set; } = ""; 
         public bool IsFile { get; set; }
         public bool IsChecked { get; set; } = true;
         public ObservableCollection<PreviewItem> Children { get; set; } = new();
