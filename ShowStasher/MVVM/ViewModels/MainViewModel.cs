@@ -50,7 +50,6 @@ namespace ShowStasher.MVVM.ViewModels
 
 
 
-
         // Holds real-time log messages
         public ObservableCollection<string> LogMessages { get; } = new();
 
@@ -61,6 +60,8 @@ namespace ShowStasher.MVVM.ViewModels
 
             var cacheService = new MetadataCacheService(Log);
 
+            var selectionService = new MetadataSelectionService();
+
             TMDbService tmdbService = null;
 
             if (string.IsNullOrWhiteSpace(tmdbApiKey))
@@ -70,7 +71,7 @@ namespace ShowStasher.MVVM.ViewModels
             }
             else
             {
-                tmdbService = new TMDbService(tmdbApiKey, cacheService, Log);
+                tmdbService = new TMDbService(tmdbApiKey, cacheService, Log, selectionService);
             }
 
             var jikanService = new JikanService(cacheService,Log);
@@ -230,7 +231,21 @@ namespace ShowStasher.MVVM.ViewModels
 
         }
 
+        [RelayCommand]
+        private void OpenHistory()
+        {
+            // Open the History window
+            //  new HistoryWindow().ShowDialog();
+            System.Windows.MessageBox.Show("Open History Window");
+        }
 
+        [RelayCommand]
+        private void OpenApiKeyDialog()
+        {
+            // Open the API key dialog
+            // new ApiKeyDialog().ShowDialog();
+            System.Windows.MessageBox.Show("Open ApiKey Window");
+        }
         private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
         {
             var files = new List<PreviewItem>();
@@ -275,7 +290,6 @@ namespace ShowStasher.MVVM.ViewModels
             Traverse(items);
             return files;
         }
-
 
 
         private void Log(string message)

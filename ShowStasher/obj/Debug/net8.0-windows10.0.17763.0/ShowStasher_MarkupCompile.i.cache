@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\App.xaml
-21104088608
+3-298682715
 1252317432
-341157527534
+39-1383068104
 2331766972463
-MVVM\Views\MainWindow.xaml;MVVM\Views\PreviewDialog.xaml;
+MVVM\Views\MainWindow.xaml;MVVM\Views\PreviewDialog.xaml;MVVM\Views\SearchSelectionDialog.xaml;
 
 True
 

@@ -30,10 +30,10 @@ namespace ShowStasher.Services
         }
 
         public async Task OrganizeFilesAsync(
- IEnumerable<PreviewItem> selectedItems,
- string destinationFolder,
- bool isOfflineMode,
- IProgress<int>? progress = null)
+        IEnumerable<PreviewItem> selectedItems,
+        string destinationFolder,
+        bool isOfflineMode,
+        IProgress<int>? progress = null)
         {
             var selectedFiles = selectedItems
                 .SelectMany(item => GetAllFiles(item))
@@ -419,18 +419,7 @@ namespace ShowStasher.Services
 
             if (metadata.Type == "Series" && metadata.Season.HasValue && metadata.Episode.HasValue)
             {
-                string epNum = metadata.Episode.Value.ToString("D2");
-                string epTitle = string.IsNullOrWhiteSpace(metadata.EpisodeTitle) ? "" : SanitizeFilename(ToTitleCase(metadata.EpisodeTitle));
-
-                if (Regex.IsMatch(epTitle, @"^Episode\s*\d+$", RegexOptions.IgnoreCase))
-                {
-                    _log($"[Info] Skipping generic episode title '{epTitle}' in filename.");
-                    epTitle = "";
-                }
-
-                newFileName = string.IsNullOrEmpty(epTitle)
-                    ? $"{epNum}{extension}"
-                    : $"{epNum} - {epTitle}{extension}";
+                newFileName = GenerateEpisodeFilename(metadata, extension);
             }
             else
             {
@@ -536,7 +525,7 @@ namespace ShowStasher.Services
             foreach (var file in allFiles)
             {
                 string fileName = Path.GetFileName(file);
-
+                
                 // Skip extras from original source
                 if (fileName.Equals("poster.jpg", StringComparison.OrdinalIgnoreCase) ||
                     fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase))
@@ -581,7 +570,20 @@ namespace ShowStasher.Services
                 }
 
                 // Compute destination relative path
-                string relativeDestination = GetRelativeDestinationPath(Path.GetFileName(file), metadata);
+                string extension = Path.GetExtension(file);
+                string renamedFile;
+
+                if (metadata.Type == "Series" && metadata.Season.HasValue && metadata.Episode.HasValue)
+                {
+                    renamedFile = GenerateEpisodeFilename(metadata, extension);
+                }
+                else
+                {
+                    renamedFile = $"{SanitizeFilename(ToTitleCase(metadata.Title))}{extension}";
+                }
+
+                string relativeDestination = GetRelativeDestinationPath(renamedFile, metadata);
+
                 string previewRootPrefix = "PREVIEW DESTINATION";
 
                 string fullRelativePath = Path.Combine(previewRootPrefix, relativeDestination);
@@ -633,6 +635,38 @@ namespace ShowStasher.Services
             }
 
             return rootItems;
+        }
+
+        private string GenerateEpisodeFilename(MediaMetadata metadata, string extension)
+        {
+            // Ensure Episode number exists
+            if (!metadata.Season.HasValue || !metadata.Episode.HasValue)
+                throw new InvalidOperationException("GenerateEpisodeFilename called without Season/Episode");
+
+            // Format episode number
+            string epNum = metadata.Episode.Value.ToString("D2");
+
+            // Normalize title: Title-case and sanitize
+            string rawTitle = metadata.EpisodeTitle ?? "";
+            string epTitle = string.IsNullOrWhiteSpace(rawTitle)
+                ? ""
+                : SanitizeFilename(ToTitleCase(rawTitle));
+
+            // Detect generic patterns: "Episode 1", "Ep 1", "E01", case-insensitive
+            if (!string.IsNullOrEmpty(epTitle))
+            {
+                // Regex: ^(Episode|Ep|E)\s*\d+$
+                if (Regex.IsMatch(epTitle, @"^(Episode|Ep|E)\s*\d+$", RegexOptions.IgnoreCase))
+                {
+                    _log($"[Info] Skipping generic episode title '{epTitle}' in filename.");
+                    epTitle = "";
+                }
+            }
+
+            // Build filename
+            return string.IsNullOrEmpty(epTitle)
+                ? $"{epNum}{extension}"
+                : $"{epNum} - {epTitle}{extension}";
         }
 
 
@@ -777,16 +811,20 @@ namespace ShowStasher.Services
             }
             else if (metadata.Type == "Series")
             {
-                var safeEpisodeTitle = string.IsNullOrEmpty(metadata.EpisodeTitle)
-                    ? $"Episode {metadata.Episode:D2}"
-                    : $"Episode {metadata.Episode:D2} - {Sanitize(metadata.EpisodeTitle)}";
+                string epNum = metadata.Episode?.ToString("D2") ?? "00";
+                string episodeTitle = metadata.EpisodeTitle ?? "";
+                bool isGeneric = Regex.IsMatch(episodeTitle, @"^Episode\s*\d+$", RegexOptions.IgnoreCase);
 
-                
+                string safeEpisodeTitle = isGeneric || string.IsNullOrWhiteSpace(episodeTitle)
+                    ? epNum
+                    : $"{epNum} - {Sanitize(episodeTitle)}";
+
                 var episodeFile = $"{safeEpisodeTitle}{extension}";
                 var firstLetter = GetFirstLetter(metadata.Title);
 
                 return Path.Combine("TV Series", firstLetter, metadata.Title, $"Season {metadata.Season}", episodeFile);
             }
+
             else
             {
                 // Fallback
@@ -866,9 +904,6 @@ namespace ShowStasher.Services
                 _log($"[DEBUG] synopsis.txt already exists in {folder}, skipping write.");
             }
         }
-
-
-
 
         private async Task SavePosterAsync(string folder, MediaMetadata metadata, bool isOfflineMode)
         {

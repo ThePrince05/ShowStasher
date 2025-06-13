@@ -20,12 +20,14 @@ namespace ShowStasher.Services
         private readonly string _apiKey;
         private readonly Action<string> _log;
         private readonly MetadataCacheService _cache;
+        private readonly IMetadataSelectionService _selectionService;
 
-        public TMDbService(string apiKey, MetadataCacheService cache, Action<string> log)
+        public TMDbService(string apiKey, MetadataCacheService cache, Action<string> log, IMetadataSelectionService selectionService)
         {
             _apiKey = apiKey;
             _cache = cache;
             _log = log;
+            _selectionService = selectionService;
         }
 
         public async Task<MediaMetadata?> GetSeriesMetadataAsync(string title, int? season = null, int? episode = null)
@@ -238,6 +240,7 @@ namespace ShowStasher.Services
 
         public async Task<MediaMetadata?> GetMovieMetadataAsync(string title, int? year = null)
         {
+            // 1. Try cache first
             var cached = await _cache.GetCachedMetadataAsync(title, "Movie");
             if (cached != null)
             {
@@ -246,10 +249,13 @@ namespace ShowStasher.Services
             }
 
             _log($"Searching for movie: '{title}'");
+
             try
             {
-                var searchUrl = $"https://api.themoviedb.org/3/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
                 using var client = new HttpClient();
+
+                // 2. Search TMDb
+                var searchUrl = $"https://api.themoviedb.org/3/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
                 var searchResponse = await client.GetAsync(searchUrl);
                 searchResponse.EnsureSuccessStatusCode();
 
@@ -263,34 +269,29 @@ namespace ShowStasher.Services
                     return null;
                 }
 
-                // Optional: prioritize match by year if given
-                JObject? bestMatch = null;
-                if (year.HasValue)
-                {
-                    bestMatch = results.FirstOrDefault(r =>
+                // 3. Build candidate list
+                List<SearchCandidate> candidates = results
+                    .Select(r => new SearchCandidate
                     {
-                        var releaseDateStr = r["release_date"]?.ToString();
-                        return DateTime.TryParse(releaseDateStr, out var releaseDate) && releaseDate.Year == year.Value;
-                    }) as JObject;
-                }
+                        Id = r["id"]?.ToObject<int>() ?? 0,
+                        Title = r["title"]?.ToString() ?? "",
+                        Year = DateTime.TryParse(r["release_date"]?.ToString(), out var dt) ? dt.Year : null
+                    })
+                    .ToList();
 
-                // Fallback: use first result
-                bestMatch ??= results.FirstOrDefault() as JObject;
+                // 4. Ask user to select if needed
+                int? selectedId = candidates.Count == 1
+                    ? candidates[0].Id
+                    : await _selectionService.PromptUserToSelectMovieAsync(title, candidates);
 
-                if (bestMatch == null)
+                if (selectedId == null)
                 {
-                    _log("No suitable match found.");
+                    _log("User cancelled movie selection.");
                     return null;
                 }
 
-                int movieId = bestMatch["id"]?.ToObject<int>() ?? 0;
-                if (movieId == 0)
-                {
-                    _log("Movie ID not found.");
-                    return null;
-                }
-
-                var detailsUrl = $"https://api.themoviedb.org/3/movie/{movieId}?api_key={_apiKey}";
+                // 5. Fetch details
+                var detailsUrl = $"https://api.themoviedb.org/3/movie/{selectedId}?api_key={_apiKey}";
                 _log($"Fetching movie details: {detailsUrl}");
 
                 var detailsResponse = await client.GetAsync(detailsUrl);
@@ -306,20 +307,20 @@ namespace ShowStasher.Services
 
                 string? releaseDateStr = obj["release_date"]?.ToString();
                 int? parsedYear = DateTime.TryParse(releaseDateStr, out var dt) ? dt.Year : null;
-
                 double? rating = obj["vote_average"]?.ToObject<double>();
+                string posterPath = obj["poster_path"]?.ToString();
 
+                // 6. Construct metadata
                 var metadata = new MediaMetadata
                 {
                     Title = obj["title"]?.ToString() ?? title,
                     Type = "Movie",
                     Synopsis = obj["overview"]?.ToString() ?? "",
-                    Cast = await GetCastAsync("movie",movieId),
-                    PosterUrl = obj["poster_path"]?.ToString() is string path && !string.IsNullOrWhiteSpace(path)
-                 ? "https://image.tmdb.org/t/p/w500" + path : "",
+                    Cast = await GetCastAsync("movie", selectedId.Value),
+                    PosterUrl = !string.IsNullOrWhiteSpace(posterPath) ? $"https://image.tmdb.org/t/p/w500{posterPath}" : "",
                     Year = parsedYear,
-                    PG = await GetPgRatingAsync(movieId, isMovie: true),
-                    Rating = rating.HasValue ? (int)Math.Round(rating.Value * 10) : null  // Convert 0–10 to 0–100
+                    PG = await GetPgRatingAsync(selectedId.Value, isMovie: true),
+                    Rating = rating.HasValue ? (int)Math.Round(rating.Value * 10) : null // Convert 0–10 to 0–100
                 };
 
                 string normalizedKey = NormalizeTitleKey(metadata.Title);
@@ -333,6 +334,7 @@ namespace ShowStasher.Services
                 return null;
             }
         }
+
 
 
         public async Task<bool> DownloadPosterAsync(string url, string savePath)
@@ -371,16 +373,36 @@ namespace ShowStasher.Services
 
         private async Task<int?> GetTvShowIdAsync(string title)
         {
+            var searchUrl = $"https://api.themoviedb.org/3/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
             using var client = new HttpClient();
-            var url = $"https://api.themoviedb.org/3/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
-            _log($"Requesting: {url}");
+            var searchResponse = await client.GetAsync(searchUrl);
+            searchResponse.EnsureSuccessStatusCode();
 
-            var json = await client.GetStringAsync(url);
-            var data = JObject.Parse(json);
-            var first = data["results"]?.FirstOrDefault();
+            var json = await searchResponse.Content.ReadAsStringAsync();
+            var results = JObject.Parse(json)["results"] as JArray;
 
-            return first?["id"]?.Value<int>();
+            if (results == null || !results.Any())
+            {
+                _log("No series results found.");
+                return null;
+            }
+
+            List<SearchCandidate> candidates = results
+                .Select(r => new SearchCandidate
+                {
+                    Id = r["id"]?.ToObject<int>() ?? 0,
+                    Title = r["name"]?.ToString() ?? "",
+                    Year = DateTime.TryParse(r["first_air_date"]?.ToString(), out var dt) ? dt.Year : null
+                })
+                .ToList();
+
+            int? selectedId = candidates.Count == 1
+                ? candidates[0].Id
+                : await _selectionService.PromptUserToSelectSeriesAsync(title, candidates);
+
+            return selectedId;
         }
+
 
 
         private string NormalizeTitleKey(string title)

@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using MahApps.Metro.Controls;
+using ShowStasher.MVVM.ViewModels;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -25,5 +27,25 @@ namespace ShowStasher
         {
 
         }
+
+        private void OptionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                var menu = new ContextMenu();
+
+                var historyItem = new MenuItem { Header = "Open History" };
+                historyItem.Command = vm.OpenHistoryCommand;
+
+                var apiKeyItem = new MenuItem { Header = "Edit API Key" };
+                apiKeyItem.Command = vm.OpenApiKeyDialogCommand;
+
+                menu.Items.Add(historyItem);
+                menu.Items.Add(apiKeyItem);
+
+                menu.IsOpen = true;
+            }
+        }
+
     }
 }
