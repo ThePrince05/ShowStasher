@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Clipboard = System.Windows.Clipboard;
 using Application = System.Windows.Application;
+using System.IO;
 
 
 
@@ -162,7 +163,7 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
 
-                var previewViewModel = new PreviewViewModel();
+                var previewViewModel = new PreviewViewModel(Log);
                 // Fill preview items
                 previewViewModel.RootItems.Clear();
                 foreach (var item in previewItems)
@@ -182,10 +183,13 @@ namespace ShowStasher.MVVM.ViewModels
 
                 // Use TrySetResult on tcs:
                 var tcs = new TaskCompletionSource<IList<PreviewItem>>();
-                previewViewModel.OnConfirm = selectedFiles =>
+                previewViewModel.OnConfirm = _ =>
                 {
-                    tcs.TrySetResult(selectedFiles);
+                    var checkedFiles = previewViewModel.GetCheckedFiles(previewViewModel.RootItems);
+                    tcs.TrySetResult(checkedFiles);
                 };
+
+
                 previewViewModel.OnCancel = () =>
                 {
                     tcs.TrySetResult(new List<PreviewItem>());
@@ -230,15 +234,49 @@ namespace ShowStasher.MVVM.ViewModels
         private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
         {
             var files = new List<PreviewItem>();
-            foreach (var item in items)
+            var validMetadataFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void Traverse(IEnumerable<PreviewItem> children)
             {
-                if (item.IsFile && item.IsChecked)
-                    files.Add(item);
-                else
-                    files.AddRange(GetCheckedFiles(item.Children));
+                foreach (var item in children)
+                {
+                    if (item.IsFile)
+                    {
+                        // Metadata detection: simple filename check
+                        var fileName = Path.GetFileName(item.DestinationPath);
+                        bool isMetadata = fileName.Equals("poster.jpg", StringComparison.OrdinalIgnoreCase)
+                                       || fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase);
+
+                        if (item.IsChecked && !isMetadata)
+                        {
+                            files.Add(item);
+
+                            // Track the folder where this media file resides
+                            var parentFolder = Path.GetDirectoryName(item.DestinationPath);
+                            if (parentFolder != null)
+                                validMetadataFolders.Add(parentFolder);
+                        }
+                        else if (isMetadata)
+                        {
+                            var parentFolder = Path.GetDirectoryName(item.DestinationPath);
+                            if (parentFolder != null && validMetadataFolders.Contains(parentFolder))
+                            {
+                                files.Add(item);
+                            }
+                        }
+                    }
+
+                    // Recurse
+                    if (item.Children.Count > 0)
+                        Traverse(item.Children);
+                }
             }
+
+            Traverse(items);
             return files;
         }
+
+
 
         private void Log(string message)
         {

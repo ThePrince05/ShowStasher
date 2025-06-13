@@ -351,7 +351,6 @@ namespace ShowStasher.Services
 
             if (!File.Exists(newFilePath))
             {
-                // Run blocking File.Move off the UI thread:
                 await Task.Run(() => File.Move(filePath, newFilePath));
                 _log($"Moved: {filePath} → {newFilePath}");
             }
@@ -360,10 +359,13 @@ namespace ShowStasher.Services
                 _log($"Skipped (already exists): {newFilePath}");
             }
 
-            SaveSynopsis(metadataRootFolder, metadata);
+            SaveSynopsis(metadataRootFolder, metadata, isOfflineMode);
+
             await SavePosterAsync(metadataRootFolder, metadata, isOfflineMode);
+
             LogFolderUsage(metadata.Type, metadataRootFolder);
         }
+
 
 
         private void LogFolderUsage(string type, string folderPath)
@@ -515,9 +517,6 @@ namespace ShowStasher.Services
 
             return rootItems;
         }
-
-
-
 
 
         private void AddFileToPreviewTree(
@@ -709,8 +708,14 @@ namespace ShowStasher.Services
         }
 
 
-        private void SaveSynopsis(string folder, MediaMetadata metadata)
+        private void SaveSynopsis(string folder, MediaMetadata metadata, bool isOfflineMode)
         {
+            if (isOfflineMode)
+            {
+                _log($"[OFFLINE] Skipping synopsis save for '{metadata.Title}'");
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(metadata.Synopsis))
             {
                 _log($"[INFO] Synopsis is empty or whitespace for '{metadata.Title}', skipping saving synopsis.txt.");
@@ -743,6 +748,7 @@ namespace ShowStasher.Services
                 _log($"[DEBUG] synopsis.txt already exists in {folder}, skipping write.");
             }
         }
+
 
 
 

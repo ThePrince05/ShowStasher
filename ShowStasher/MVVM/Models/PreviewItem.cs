@@ -40,7 +40,34 @@ namespace ShowStasher.MVVM.Models
         private bool showCheckbox;
 
         public ObservableCollection<PreviewItem> Children { get; set; } = new();
+
+        partial void OnIsCheckedChanged(bool value)
+        {
+            // If this node shows a checkbox (series folder) and is a folder,
+            // propagate this checked state to all descendants.
+            if (ShowCheckbox && IsFolder)
+            {
+                SetChildrenChecked(this, value);
+            }
+        }
+
+        private void SetChildrenChecked(PreviewItem node, bool isCheckedValue)
+        {
+            foreach (var child in node.Children)
+            {
+                // Set child IsChecked regardless of its own ShowCheckbox,
+                // so that the filtering logic sees the correct state.
+                child.IsChecked = isCheckedValue;
+
+                // Recurse into grandchildren
+                if (child.Children.Count > 0)
+                {
+                    SetChildrenChecked(child, isCheckedValue);
+                }
+            }
+        }
     }
+
 
 
 

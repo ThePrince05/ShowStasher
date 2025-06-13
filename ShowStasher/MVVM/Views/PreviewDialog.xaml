@@ -13,34 +13,29 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
 
- 
     <Window.Resources>
-        <!-- Converter to pick folder vs file icon -->
         <converters:FolderFileIconConverter x:Key="FolderFileIconConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-        <!-- Template for file nodes with rename preview -->
+
         <DataTemplate x:Key="RenameTemplate">
             <TextBlock VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis">
-            <Run Text="{Binding OriginalName}" />
-            <Run Text=" → " />
-            <Run Text="{Binding RenamedName}"
-                 FontWeight="Bold" />
+                <Run Text="{Binding OriginalName}" />
+                <Run Text=" → " />
+                <Run Text="{Binding RenamedName}"
+                     FontWeight="Bold" />
             </TextBlock>
         </DataTemplate>
 
-        <!-- Default template for folders or other items -->
         <DataTemplate x:Key="DefaultTemplate">
             <TextBlock Text="{Binding Name}"
                        VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis" />
         </DataTemplate>
 
-        <!-- The selector that picks between them -->
         <models:PreviewItemTemplateSelector x:Key="PreviewItemTemplateSelector"
-                                           RenameTemplate="{StaticResource RenameTemplate}"
-                                           DefaultTemplate="{StaticResource DefaultTemplate}" />
-
+                                            RenameTemplate="{StaticResource RenameTemplate}"
+                                            DefaultTemplate="{StaticResource DefaultTemplate}" />
     </Window.Resources>
 
     <DockPanel LastChildFill="True">
@@ -69,26 +64,22 @@
                     <StackPanel Orientation="Horizontal"
                                 Margin="2"
                                 ToolTip="{Binding DestinationPath}">
-                        <!-- Checkbox -->
-                        <CheckBox IsChecked="{Binding IsChecked}"
+                        <!-- Checkbox shown only for series folders -->
+                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
                                   VerticalAlignment="Center"
                                   Margin="0,0,5,0"
                                   Visibility="{Binding ShowCheckbox, Converter={StaticResource BoolToVisibilityConverter}}" />
 
-
-                        <!-- Icon -->
                         <Image Width="16"
                                Height="16"
                                Margin="0,0,5,0"
                                Source="{Binding IsFolder, Converter={StaticResource FolderFileIconConverter}}" />
 
-                        <!-- Name (file rename preview or folder name) -->
                         <ContentControl Content="{Binding}"
                                         ContentTemplateSelector="{StaticResource PreviewItemTemplateSelector}" />
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.Resources>
         </TreeView>
-
     </DockPanel>
 </Window>

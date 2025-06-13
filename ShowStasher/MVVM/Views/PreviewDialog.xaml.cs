@@ -28,7 +28,7 @@ namespace ShowStasher.MVVM.Views
             this.Closing += PreviewDialog_Closing;
         }
 
-        private bool _hasHandledCancel = false;
+        private readonly Action<string> _log;
 
         private void PreviewDialog_Closing(object? sender, CancelEventArgs e)
         {

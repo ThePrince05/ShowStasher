@@ -13,15 +13,20 @@ namespace ShowStasher.MVVM.ViewModels
     public partial class PreviewViewModel : ObservableObject
     {
         public ObservableCollection<PreviewItem> RootItems { get; } = new();
+
         public Action? RequestClose { get; set; }
-      
+        private readonly Action<string> _log;
 
         private bool _hasResponded;
-
         public bool HasResponded
         {
             get => _hasResponded;
             set => SetProperty(ref _hasResponded, value);
+        }
+
+        public PreviewViewModel(Action<string> log)
+        {
+            _log = log;
         }
 
         [RelayCommand]
@@ -45,7 +50,7 @@ namespace ShowStasher.MVVM.ViewModels
         public Action<List<PreviewItem>>? OnConfirm;
         public Action? OnCancel;
 
-        private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
+        public List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
         {
             var files = new List<PreviewItem>();
             foreach (var item in items)
@@ -54,8 +59,10 @@ namespace ShowStasher.MVVM.ViewModels
                     files.Add(item);
                 files.AddRange(GetCheckedFiles(item.Children));
             }
+
             return files;
         }
     }
+
 
 }
