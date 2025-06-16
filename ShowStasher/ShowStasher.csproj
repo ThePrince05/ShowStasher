@@ -9,6 +9,7 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<PackageIcon>movies_folder_20806.png</PackageIcon>
 	<ApplicationIcon>movies_folder_20806.ico</ApplicationIcon>
+	<PlatformTarget>x86</PlatformTarget>
 
   </PropertyGroup>
 
@@ -26,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <PackageReference Include="MahApps.Metro.IconPacks" Version="5.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>

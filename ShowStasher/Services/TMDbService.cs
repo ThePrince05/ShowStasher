@@ -12,34 +12,36 @@ using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
+using static ShowStasher.MVVM.ViewModels.MainViewModel;
+using Microsoft.Extensions.Logging;
 
 namespace ShowStasher.Services
 {
     public class TMDbService
     {
         private readonly string _apiKey;
-        private readonly Action<string> _log;
-        private readonly MetadataCacheService _cache;
+        private readonly Action<string, AppLogLevel> _log;
+        private readonly SqliteDbService _dbService;
         private readonly IMetadataSelectionService _selectionService;
 
-        public TMDbService(string apiKey, MetadataCacheService cache, Action<string> log, IMetadataSelectionService selectionService)
+        public TMDbService(string apiKey, SqliteDbService cache, Action<string, AppLogLevel> log, IMetadataSelectionService selectionService)
         {
             _apiKey = apiKey;
-            _cache = cache;
+            _dbService = cache;
             _log = log;
             _selectionService = selectionService;
         }
 
         public async Task<MediaMetadata?> GetSeriesMetadataAsync(string title, int? season = null, int? episode = null)
         {
-            var cached = await _cache.GetCachedMetadataAsync(title, "Series", season, episode);
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode);
             if (cached != null)
             {
-                _log($"[Cache Hit] Series '{title}' S{season}E{episode} found in cache.");
+                _log($"Series '{title}' S{season}E{episode} found in cache.", AppLogLevel.Success);
                 return cached;
             }
 
-            _log($"[TMDb] Searching for series title: '{title}'");
+            _log($"Searching for series title '{title}' on TMDb.", AppLogLevel.Info);
             int? tvId;
             try
             {
@@ -47,17 +49,17 @@ namespace ShowStasher.Services
             }
             catch (HttpRequestException e)
             {
-                _log($"[Error] Network error while fetching series ID: {e.Message}");
+                _log($"Network error while fetching series ID: {e.Message}", AppLogLevel.Error);
                 return null;
             }
 
             if (tvId == null)
             {
-                _log($"[Not Found] No TMDb match found for series title '{title}'.");
+                _log($"No TMDb match found for series title '{title}'.", AppLogLevel.Warning);
                 return null;
             }
 
-            _log($"[TMDb] Found series ID {tvId} for '{title}'");
+            _log($"Found series ID {tvId} for '{title}'.", AppLogLevel.Info);
 
             bool seasonFetched = false;
 
@@ -66,7 +68,7 @@ namespace ShowStasher.Services
                 try
                 {
                     string seriesUrl = $"https://api.themoviedb.org/3/tv/{tvId}?api_key={_apiKey}";
-                    _log($"[Fetch] Series-level metadata from {seriesUrl}");
+                    _log($"Fetching series metadata from {seriesUrl}", AppLogLevel.Info);
 
                     using var client = new HttpClient();
                     var seriesResponse = await client.GetAsync(seriesUrl);
@@ -90,7 +92,7 @@ namespace ShowStasher.Services
                     var pgRating = await GetPgRatingAsync(tvId.Value, isMovie: false);
 
                     string seasonUrl = $"https://api.themoviedb.org/3/tv/{tvId}/season/{season}?api_key={_apiKey}";
-                    _log($"[Fetch] Season-level metadata from {seasonUrl}");
+                    _log($"Fetching season metadata from {seasonUrl}", AppLogLevel.Info);
 
                     var response = await client.GetAsync(seasonUrl);
                     response.EnsureSuccessStatusCode();
@@ -110,20 +112,20 @@ namespace ShowStasher.Services
 
                             if (string.IsNullOrWhiteSpace(epTitle) || string.IsNullOrWhiteSpace(airDateStr))
                             {
-                                _log($"[Skip] Episode S{season}E{epNum} has no title or air date.");
+                                _log($"Skipping episode S{season}E{epNum} due to missing title or air date.", AppLogLevel.Warning);
                                 continue;
                             }
 
                             if (!DateTime.TryParse(airDateStr, out var airDate) || airDate > DateTime.Today)
                             {
-                                _log($"[Skip] Episode S{season}E{epNum} has future air date ({airDateStr}).");
+                                _log($"Skipping episode S{season}E{epNum} with future air date ({airDateStr}).", AppLogLevel.Warning);
                                 continue;
                             }
 
-                            var episodeCached = await _cache.GetCachedMetadataAsync(title, "Series", null, season, epNum);
+                            var episodeCached = await _dbService.GetCachedMetadataAsync(title, "Series", null, season, epNum);
                             if (episodeCached != null)
                             {
-                                _log($"[Cache Skip] Episode S{season}E{epNum} already cached.");
+                                _log($"Episode S{season}E{epNum} already cached, skipping.", AppLogLevel.Debug);
                                 continue;
                             }
 
@@ -142,8 +144,8 @@ namespace ShowStasher.Services
                             };
 
                             string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
-                            await _cache.SaveMetadataAsync(normalizedKey, episodeMeta);
-                            _log($"[Cache Save] S{season}E{epNum} - '{epTitle}' saved.");
+                            await _dbService.SaveMetadataAsync(normalizedKey, episodeMeta);
+                            _log($"Saved metadata for S{season}E{epNum} - '{epTitle}'.", AppLogLevel.Success);
                         }
 
                         seasonFetched = true;
@@ -151,14 +153,14 @@ namespace ShowStasher.Services
                 }
                 catch (Exception ex)
                 {
-                    _log($"[Warning] Failed to prefetch season metadata: {ex.Message}");
+                    _log($"Failed to prefetch season metadata: {ex.Message}", AppLogLevel.Warning);
                 }
             }
 
-            var final = await _cache.GetCachedMetadataAsync(title, "Series", null, season, episode);
+            var final = await _dbService.GetCachedMetadataAsync(title, "Series", null, season, episode);
             if (final != null)
             {
-                _log($"[Success] Metadata for '{title}' S{season}E{episode} retrieved from cache.");
+                _log($"Metadata for '{title}' S{season}E{episode} retrieved from cache.", AppLogLevel.Success);
                 return final;
             }
 
@@ -169,7 +171,7 @@ namespace ShowStasher.Services
                     using var client = new HttpClient();
 
                     string epUrl = $"https://api.themoviedb.org/3/tv/{tvId}/season/{season}/episode/{episode}?api_key={_apiKey}";
-                    _log($"[Fallback] Fetching individual episode from {epUrl}");
+                    _log($"Fetching individual episode metadata from {epUrl}", AppLogLevel.Info);
 
                     var epResponse = await client.GetAsync(epUrl);
                     epResponse.EnsureSuccessStatusCode();
@@ -179,7 +181,7 @@ namespace ShowStasher.Services
                     var epTitle = ep["name"]?.ToString() ?? "";
                     if (string.IsNullOrWhiteSpace(epTitle))
                     {
-                        _log($"[Fallback] Episode title not found.");
+                        _log("Episode title not found during fallback fetch.", AppLogLevel.Warning);
                         return null;
                     }
 
@@ -219,42 +221,37 @@ namespace ShowStasher.Services
                     };
 
                     string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
-                    await _cache.SaveMetadataAsync(normalizedKey, episodeMeta);
-                    _log($"[Fallback] Episode metadata saved: '{title}' S{season}E{episode}");
+                    await _dbService.SaveMetadataAsync(normalizedKey, episodeMeta);
+                    _log($"Fallback episode metadata saved for '{title}' S{season}E{episode}.", AppLogLevel.Success);
 
                     return episodeMeta;
                 }
                 catch (Exception ex)
                 {
-                    _log($"[Error] Fallback fetch failed: {ex.Message}");
+                    _log($"Fallback fetch failed: {ex.Message}", AppLogLevel.Error);
                 }
             }
 
-            _log($"[Failure] No metadata found for '{title}' S{season}E{episode}.");
+            _log($"No metadata found for '{title}' S{season}E{episode}.", AppLogLevel.Error);
             return null;
         }
 
 
-
-
-
         public async Task<MediaMetadata?> GetMovieMetadataAsync(string title, int? year = null)
         {
-            // 1. Try cache first
-            var cached = await _cache.GetCachedMetadataAsync(title, "Movie");
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Movie");
             if (cached != null)
             {
-                _log($"[Cache] Found cached movie metadata for '{title}'");
+                _log($"Cache hit for movie '{title}'", AppLogLevel.Success);
                 return cached;
             }
 
-            _log($"Searching for movie: '{title}'");
+            _log($"Searching movie '{title}'", AppLogLevel.Action);
 
             try
             {
                 using var client = new HttpClient();
 
-                // 2. Search TMDb
                 var searchUrl = $"https://api.themoviedb.org/3/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
                 var searchResponse = await client.GetAsync(searchUrl);
                 searchResponse.EnsureSuccessStatusCode();
@@ -265,12 +262,11 @@ namespace ShowStasher.Services
 
                 if (results == null || !results.Any())
                 {
-                    _log($"No movie results found for '{title}'.");
+                    _log($"No results found for movie '{title}'", AppLogLevel.Warning);
                     return null;
                 }
 
-                // 3. Build candidate list
-                List<SearchCandidate> candidates = results
+                var candidates = results
                     .Select(r => new SearchCandidate
                     {
                         Id = r["id"]?.ToObject<int>() ?? 0,
@@ -279,25 +275,23 @@ namespace ShowStasher.Services
                     })
                     .ToList();
 
-                // 4. Ask user to select if needed
                 int? selectedId = candidates.Count == 1
                     ? candidates[0].Id
                     : await _selectionService.PromptUserToSelectMovieAsync(title, candidates);
 
                 if (selectedId == null)
                 {
-                    _log("User cancelled movie selection.");
+                    _log("Movie selection cancelled by user", AppLogLevel.Warning);
                     return null;
                 }
 
-                // 5. Fetch details
                 var detailsUrl = $"https://api.themoviedb.org/3/movie/{selectedId}?api_key={_apiKey}";
-                _log($"Fetching movie details: {detailsUrl}");
+                _log($"Fetching details from {detailsUrl}", AppLogLevel.Action);
 
                 var detailsResponse = await client.GetAsync(detailsUrl);
                 if (detailsResponse.StatusCode == HttpStatusCode.NotFound)
                 {
-                    _log("Movie details returned 404 Not Found.");
+                    _log($"Movie details not found (404) for ID {selectedId}", AppLogLevel.Warning);
                     return null;
                 }
                 detailsResponse.EnsureSuccessStatusCode();
@@ -310,7 +304,6 @@ namespace ShowStasher.Services
                 double? rating = obj["vote_average"]?.ToObject<double>();
                 string posterPath = obj["poster_path"]?.ToString();
 
-                // 6. Construct metadata
                 var metadata = new MediaMetadata
                 {
                     Title = obj["title"]?.ToString() ?? title,
@@ -320,26 +313,28 @@ namespace ShowStasher.Services
                     PosterUrl = !string.IsNullOrWhiteSpace(posterPath) ? $"https://image.tmdb.org/t/p/w500{posterPath}" : "",
                     Year = parsedYear,
                     PG = await GetPgRatingAsync(selectedId.Value, isMovie: true),
-                    Rating = rating.HasValue ? (int)Math.Round(rating.Value * 10) : null // Convert 0–10 to 0–100
+                    Rating = rating.HasValue ? (int)Math.Round(rating.Value * 10) : null
                 };
 
                 string normalizedKey = NormalizeTitleKey(metadata.Title);
-                await _cache.SaveMetadataAsync(normalizedKey, metadata);
+                await _dbService.SaveMetadataAsync(normalizedKey, metadata);
+
+                _log($"Movie metadata cached for '{metadata.Title}'", AppLogLevel.Success);
 
                 return metadata;
             }
             catch (HttpRequestException e)
             {
-                _log($"Failed to fetch movie metadata: {e.Message}");
+                _log($"HTTP error fetching movie metadata: {e.Message}", AppLogLevel.Error);
                 return null;
             }
         }
 
 
 
+
         public async Task<bool> DownloadPosterAsync(string url, string savePath)
         {
-            // 10‐second timeout + enforce TLS 1.2+
             var handler = new HttpClientHandler
             {
                 SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
@@ -348,60 +343,89 @@ namespace ShowStasher.Services
 
             try
             {
-                _log($"Downloading poster: {url}");
+                _log($"Starting poster download from {url}", AppLogLevel.Action);
+
                 var data = await client.GetByteArrayAsync(url);
                 await File.WriteAllBytesAsync(savePath, data);
-                _log($"Saved poster.jpg in {Path.GetDirectoryName(savePath)}");
+
+                _log($"Poster saved to {Path.GetDirectoryName(savePath)}", AppLogLevel.Success);
                 return true;
             }
-
             catch (TaskCanceledException)
             {
-                _log($"Timeout while downloading poster for {Path.GetFileName(savePath)}");
+                _log($"Timeout downloading poster: {Path.GetFileName(savePath)}", AppLogLevel.Warning);
             }
             catch (HttpRequestException e)
             {
-                _log($"HTTP error downloading poster: {e.Message}");
+                _log($"HTTP error downloading poster: {e.Message}", AppLogLevel.Error);
             }
             catch (Exception e)
             {
-                _log($"Error downloading poster: {e.Message}");
+                _log($"Unexpected error downloading poster: {e.Message}", AppLogLevel.Error);
             }
+
             return false;
         }
 
 
+
         private async Task<int?> GetTvShowIdAsync(string title)
         {
+            _log($"Searching TV series: '{title}'", AppLogLevel.Action);
+
             var searchUrl = $"https://api.themoviedb.org/3/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
             using var client = new HttpClient();
-            var searchResponse = await client.GetAsync(searchUrl);
-            searchResponse.EnsureSuccessStatusCode();
 
-            var json = await searchResponse.Content.ReadAsStringAsync();
-            var results = JObject.Parse(json)["results"] as JArray;
-
-            if (results == null || !results.Any())
+            try
             {
-                _log("No series results found.");
+                var searchResponse = await client.GetAsync(searchUrl);
+                searchResponse.EnsureSuccessStatusCode();
+
+                var json = await searchResponse.Content.ReadAsStringAsync();
+                var results = JObject.Parse(json)["results"] as JArray;
+
+                if (results == null || !results.Any())
+                {
+                    _log($"No TV series results found for '{title}'.", AppLogLevel.Warning);
+                    return null;
+                }
+
+                List<SearchCandidate> candidates = results
+                    .Select(r => new SearchCandidate
+                    {
+                        Id = r["id"]?.ToObject<int>() ?? 0,
+                        Title = r["name"]?.ToString() ?? "",
+                        Year = DateTime.TryParse(r["first_air_date"]?.ToString(), out var dt) ? dt.Year : null
+                    })
+                    .ToList();
+
+                int? selectedId = candidates.Count == 1
+                    ? candidates[0].Id
+                    : await _selectionService.PromptUserToSelectSeriesAsync(title, candidates);
+
+                if (selectedId == null)
+                {
+                    _log("User cancelled TV series selection.", AppLogLevel.Info);
+                }
+                else
+                {
+                    _log($"Selected TV series ID: {selectedId}", AppLogLevel.Success);
+                }
+
+                return selectedId;
+            }
+            catch (HttpRequestException e)
+            {
+                _log($"HTTP error while searching TV series: {e.Message}", AppLogLevel.Error);
                 return null;
             }
-
-            List<SearchCandidate> candidates = results
-                .Select(r => new SearchCandidate
-                {
-                    Id = r["id"]?.ToObject<int>() ?? 0,
-                    Title = r["name"]?.ToString() ?? "",
-                    Year = DateTime.TryParse(r["first_air_date"]?.ToString(), out var dt) ? dt.Year : null
-                })
-                .ToList();
-
-            int? selectedId = candidates.Count == 1
-                ? candidates[0].Id
-                : await _selectionService.PromptUserToSelectSeriesAsync(title, candidates);
-
-            return selectedId;
+            catch (Exception e)
+            {
+                _log($"Unexpected error while searching TV series: {e.Message}", AppLogLevel.Error);
+                return null;
+            }
         }
+
 
 
 
@@ -413,46 +437,57 @@ namespace ShowStasher.Services
 
         private async Task<string> GetPgRatingAsync(int tmdbId, bool isMovie)
         {
-            using var client = new HttpClient();
             var endpoint = isMovie
                 ? $"https://api.themoviedb.org/3/movie/{tmdbId}/release_dates?api_key={_apiKey}"
                 : $"https://api.themoviedb.org/3/tv/{tmdbId}/content_ratings?api_key={_apiKey}";
 
+            _log($"Fetching PG rating from {(isMovie ? "movie" : "TV")} endpoint: {endpoint}", AppLogLevel.Action);
+
             try
             {
+                using var client = new HttpClient();
                 var response = await client.GetAsync(endpoint);
                 response.EnsureSuccessStatusCode();
+
                 var json = await response.Content.ReadAsStringAsync();
                 var obj = JObject.Parse(json);
 
                 string? usRating = null;
 
+                var results = obj["results"] as JArray;
+                var usEntry = results?.FirstOrDefault(x => x["iso_3166_1"]?.ToString() == "US");
+
                 if (isMovie)
                 {
-                    var results = obj["results"] as JArray;
-                    var usEntry = results?.FirstOrDefault(x => x["iso_3166_1"]?.ToString() == "US");
                     usRating = usEntry?["release_dates"]?[0]?["certification"]?.ToString();
                 }
                 else
                 {
-                    var results = obj["results"] as JArray;
-                    var usEntry = results?.FirstOrDefault(x => x["iso_3166_1"]?.ToString() == "US");
                     usRating = usEntry?["rating"]?.ToString();
                 }
 
-                return ConvertUsToSouthAfricaRating(usRating ?? string.Empty);
+                var convertedRating = ConvertUsToSouthAfricaRating(usRating ?? string.Empty);
+                _log($"Converted US rating '{usRating}' to South African rating '{convertedRating}'.", AppLogLevel.Success);
+
+                return convertedRating;
             }
             catch (Exception ex)
             {
-                _log($"[Rating] Failed to fetch PG rating: {ex.Message}");
-                return "PG"; // Default rating in case of error
+                _log($"Failed to fetch PG rating: {ex.Message}", AppLogLevel.Error);
+                return "PG"; // Default fallback rating
             }
         }
 
         private string ConvertUsToSouthAfricaRating(string usRating)
         {
-            return usRating.ToUpperInvariant() switch
+            if (string.IsNullOrWhiteSpace(usRating))
+                return "PG"; // default
+
+            usRating = usRating.ToUpperInvariant();
+
+            return usRating switch
             {
+                // Movie Ratings
                 "G" => "A",
                 "PG" => "PG",
                 "PG-13" => "13",
@@ -460,16 +495,27 @@ namespace ShowStasher.Services
                 "NC-17" => "18",
                 "X" => "X18",
                 "XX" => "XX",
-                "MATURE" => "16", // Assuming 'Mature' maps to 16
-                _ => "PG" // Default rating
+                "MATURE" => "16",
+
+                // TV Ratings
+                "TV-Y" => "A",       // All children
+                "TV-Y7" => "7",      // Directed to older children
+                "TV-G" => "PG",      // General audience
+                "TV-PG" => "13",     // Parental guidance suggested
+                "TV-14" => "16",     // Parents strongly cautioned
+                "TV-MA" => "18",     // Mature audience only
+
+                _ => "PG" // Default fallback
             };
         }
+
         private async Task<string> GetCastAsync(string mediaType, int id)
         {
+            var url = $"https://api.themoviedb.org/3/{mediaType}/{id}/credits?api_key={_apiKey}";
+            _log($"Fetching cast info from: {url}", AppLogLevel.Action);
+
             try
             {
-                string url = $"https://api.themoviedb.org/3/{mediaType}/{id}/credits?api_key={_apiKey}";
-
                 using var client = new HttpClient();
                 var response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
@@ -477,7 +523,6 @@ namespace ShowStasher.Services
                 var json = await response.Content.ReadAsStringAsync();
                 var obj = JObject.Parse(json);
 
-                // Top 3 cast with "Name (Character)"
                 var castList = obj["cast"]?
                     .Take(3)
                     .Select(c =>
@@ -486,24 +531,26 @@ namespace ShowStasher.Services
                         var character = c["character"]?.ToString();
                         return !string.IsNullOrWhiteSpace(actor) && !string.IsNullOrWhiteSpace(character)
                             ? $"{actor} ({character})"
-                            : actor; // fallback: actor only
+                            : actor;
                     })
-                    .Where(entry => !string.IsNullOrWhiteSpace(entry)) ?? [];
+                    .Where(entry => !string.IsNullOrWhiteSpace(entry))
+                    .ToList() ?? new List<string>();
 
-                // Director or similar lead crew role
                 var director = obj["crew"]?
                     .FirstOrDefault(c => c["job"]?.ToString()?.Contains("Director") == true)?["name"]?.ToString();
 
-                var combined = castList.ToList();
                 if (!string.IsNullOrWhiteSpace(director))
-                    combined.Add($"Director: {director}");
+                    castList.Add($"Director: {director}");
 
-                return string.Join(", ", combined);
+                var combinedCast = string.Join(", ", castList);
+                _log($"Fetched cast: {combinedCast}", AppLogLevel.Success);
+
+                return combinedCast;
             }
             catch (Exception ex)
             {
-                _log($"[Warning] Failed to fetch cast for {mediaType}/{id}: {ex.Message}");
-                return "";
+                _log($"Failed to fetch cast for {mediaType}/{id}: {ex.Message}", AppLogLevel.Warning);
+                return string.Empty;
             }
         }
     }

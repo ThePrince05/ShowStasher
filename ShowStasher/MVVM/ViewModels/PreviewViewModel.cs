@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using ShowStasher.MVVM.Models;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ShowStasher.MVVM.ViewModels.MainViewModel;
 
 namespace ShowStasher.MVVM.ViewModels
 {
@@ -15,7 +17,7 @@ namespace ShowStasher.MVVM.ViewModels
         public ObservableCollection<PreviewItem> RootItems { get; } = new();
 
         public Action? RequestClose { get; set; }
-        private readonly Action<string> _log;
+       
 
         private bool _hasResponded;
         public bool HasResponded
@@ -24,10 +26,7 @@ namespace ShowStasher.MVVM.ViewModels
             set => SetProperty(ref _hasResponded, value);
         }
 
-        public PreviewViewModel(Action<string> log)
-        {
-            _log = log;
-        }
+     
 
         [RelayCommand]
         private void Confirm()

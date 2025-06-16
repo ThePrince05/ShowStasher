@@ -10,6 +10,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using MahApps.Metro.IconPacks;
+using Image = System.Windows.Controls.Image;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace ShowStasher
 {
@@ -34,11 +37,34 @@ namespace ShowStasher
             {
                 var menu = new ContextMenu();
 
-                var historyItem = new MenuItem { Header = "Open History" };
-                historyItem.Command = vm.OpenHistoryCommand;
+                var historyItem = new MenuItem
+                {
+                    Header = "Open History",
+                    Icon = new PackIconMaterial
+                    {
+                        Kind = PackIconMaterialKind.History,
+                        Width = 16,
+                        Height = 16,
+                        Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0063B1")),
+                        VerticalAlignment = VerticalAlignment.Center
+                    },
+                    Command = vm.OpenHistoryCommand
+                };
 
-                var apiKeyItem = new MenuItem { Header = "Edit API Key" };
-                apiKeyItem.Command = vm.OpenApiKeyDialogCommand;
+                var apiKeyItem = new MenuItem
+                {
+                    Header = "Edit API Key",
+                    Icon = new PackIconMaterial
+                    {
+                        Kind = PackIconMaterialKind.Key,
+                        Width = 16,
+                        Height = 16,
+                        Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0063B1")),
+                        VerticalAlignment = VerticalAlignment.Center
+                    },
+                    Command = vm.OpenApiKeyDialogCommand
+                };
+                
 
                 menu.Items.Add(historyItem);
                 menu.Items.Add(apiKeyItem);

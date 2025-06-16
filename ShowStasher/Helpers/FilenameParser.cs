@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace ShowStasher.Helpers
 {
-   
-     
+
+
     public static class FilenameParser
     {
         private static readonly Regex SeasonEpisodeRegex = new(
@@ -45,7 +45,7 @@ namespace ShowStasher.Helpers
             "DDP5.1", "DDP5.1", "DD5.1", "AAC","AAC2.0", "TrueHD", "Atmos", "Opus", "DTS-HD", "MA", "FLAC", "MP3", "OGG",
 
             // Miscellaneous
-            "YIFY", "RARBG", "PSA", "GalaxyRG", "Joy", "Subbed", "Dual Audio", "Multi Sub", "Subs", "FanDub", "FanSub", "EngDub", "JapDub",
+            "YIFY", "RARBG", "PSA", "GalaxyRG", "Joy", "Subbed", "Dual Audio", "Multi Sub", "Subs", "FanDub", "FanSub", "EngDub", "JapDub", "CMRG","UHD", "IAMABLE", "VXT", "FLUX", "DLWP", "REMASTERED",
 
             // Version and Edition Tags
             "Remux", "REPACK", "PROPER", "LIMITED", "EXTENDED", "UNRATED", "Director's Cut",
@@ -54,8 +54,8 @@ namespace ShowStasher.Helpers
             "HDR", "HDR10", "HDR10+", "SDR", "DV", "DoVi", "DolbyVision",
 
             // Language Markers
-            "H", "English", "AMZN"
-               
+            "H", "English", "AMZN", "GERMAN"
+
         };
 
 
@@ -137,43 +137,62 @@ namespace ShowStasher.Helpers
 
 
 
-        private static string CleanFilenamePreservingTokens(string name)
+
+        public static string CleanFilenamePreservingTokens(string name)
         {
-            // 1. Replace parenthesis, . and _ with spaces
+            if (string.IsNullOrWhiteSpace(name))
+                return "";
+
+            // 1. Remove parenthesis content (and the parentheses)
             name = Regex.Replace(name, @"\([^)]*\)", "", RegexOptions.IgnoreCase);
 
+            // 2. Replace dots and underscores with spaces
             name = name.Replace('.', ' ').Replace('_', ' ');
 
-            // 2. Remove bracketed groups [LikeThis]
+            // 3. Remove bracketed groups [like this]
             name = Regex.Replace(name, @"\[[^\]]+\]", "", RegexOptions.IgnoreCase);
 
-            // 3. Remove known garbage words (1080p, WEBRip, etc.)
-            foreach (var word in KnownGarbageWords)
+            // 4. Remove known garbage words
+            var tokens = name.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+            tokens = tokens.Where(t => !KnownGarbageWords.Contains(t)).ToList();
+
+            // 5. Remove version tokens like v1, v2, v3
+            tokens = tokens.Where(t => !VersionGarbageRegex.IsMatch(t)).ToList();
+
+            // Helper to check if token is a valid numeric token to keep
+            bool IsValidToken(string token)
             {
-                name = Regex.Replace(
-                    name,
-                    $@"\b{Regex.Escape(word)}\b",
-                    "",
-                    RegexOptions.IgnoreCase);
+                // Allow 4-digit years like 1999 or 2025
+                if (Regex.IsMatch(token, @"^(19|20)\d{2}$"))
+                    return true;
+
+                // Allow season/episode codes like S01E01 or 01x05
+                if (Regex.IsMatch(token, @"^S\d{1,2}E\d{1,2}$", RegexOptions.IgnoreCase))
+                    return true;
+                if (Regex.IsMatch(token, @"^\d{1,2}x\d{1,2}$", RegexOptions.IgnoreCase))
+                    return true;
+
+                // Allow pure numbers like "86", "12"
+                if (Regex.IsMatch(token, @"^\d+$"))
+                    return true;
+
+                // Allow decimal numbers like "3.10"
+                if (Regex.IsMatch(token, @"^\d+\.\d+$"))
+                    return true;
+
+                return false;
             }
 
-            // 4. Remove version tokens like v1, v2, v10 (standalone, word-boundary)
-            name = VersionGarbageRegex.Replace(name, "");
+            // 6. Remove tokens with digits that are not valid (except the above)
+            tokens = tokens.Where(t => !Regex.IsMatch(t, @"\d") || IsValidToken(t)).ToList();
 
-            // 5. Remove any token containing digits
-            //    except 4-digit years and except SxxEyy or xxXyy patterns
-            name = Regex.Replace(
-                name,
-                @"\b(?!\d{4}\b)(?![sS]\d{1,2}[eE]\d{1,2}\b)(?!\d{1,2}[xX]\d{1,2}\b)\w*\d+\w*\b",
-                "",
-                RegexOptions.IgnoreCase);
+            // 7. Join tokens with a single space and trim
+            string cleaned = string.Join(" ", tokens).Trim();
 
-            // 6. Collapse multiple spaces into one and trim
-            return Regex.Replace(name, @"\s{2,}", " ").Trim();
+            return cleaned;
         }
-
     }
 
 
 
-}
+    }

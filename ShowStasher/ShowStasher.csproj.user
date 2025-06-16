@@ -7,14 +7,23 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="MVVM\Views\HistoryWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="MVVM\Views\PreviewDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="MVVM\Views\SearchSelectionDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="MVVM\Views\TmdbApiKeyWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="MVVM\Views\HistoryWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="MVVM\Views\MainWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -22,6 +31,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MVVM\Views\SearchSelectionDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MVVM\Views\TmdbApiKeyWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

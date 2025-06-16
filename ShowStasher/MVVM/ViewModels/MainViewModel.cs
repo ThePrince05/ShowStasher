@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using Clipboard = System.Windows.Clipboard;
 using Application = System.Windows.Application;
 using System.IO;
+using System.Diagnostics;
 
 
 
@@ -22,62 +23,33 @@ namespace ShowStasher.MVVM.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        private readonly FileOrganizerService _fileOrganizerService;
-        private readonly MetadataCacheService _metadataCacheService;
+        private FileOrganizerService _fileOrganizerService;
+        private readonly SqliteDbService _dbService;
 
-        [ObservableProperty]
-        private string sourcePath;
+        [ObservableProperty] private string sourcePath;
+        [ObservableProperty] private string destinationPath;
+        [ObservableProperty] private string statusMessage;
+        [ObservableProperty] private string? selectedLogMessage;
+        [ObservableProperty] private bool isOfflineMode;
+        [ObservableProperty] private int progress;
+        [ObservableProperty] private bool isBusy;
 
-        [ObservableProperty]
-        private string destinationPath;
-
-        [ObservableProperty]
-        private string statusMessage;
-
-        [ObservableProperty]
-        private string? selectedLogMessage;
-
-        public ObservableCollection<string> SelectedLogMessages { get; } = new();
-
-        [ObservableProperty]
-        private bool isOfflineMode;
-
-        [ObservableProperty]
-        private int progress;
-
-        [ObservableProperty]
-        private bool isBusy;
-
-
-
-        // Holds real-time log messages
         public ObservableCollection<string> LogMessages { get; } = new();
-
+        public ObservableCollection<string> SelectedLogMessages { get; } = new();
 
         public MainViewModel()
         {
-            string tmdbApiKey = ConfigurationManager.AppSettings["TMDbApiKey"];
+            _dbService = new SqliteDbService(Log);
 
-            var cacheService = new MetadataCacheService(Log);
-
-            var selectionService = new MetadataSelectionService();
-
-            TMDbService tmdbService = null;
-
-            if (string.IsNullOrWhiteSpace(tmdbApiKey))
+            Task.Run(async () =>
             {
-                Log("ERROR: TMDb API key is missing in app.config");
-                tmdbService = null; // or a fallback instance if you implement one
-            }
-            else
-            {
-                tmdbService = new TMDbService(tmdbApiKey, cacheService, Log, selectionService);
-            }
+                string tmdbApiKey = await EnsureTmdbApiKeyAsync();
 
-            var jikanService = new JikanService(cacheService,Log);
-
-            // If tmdbService is null, you may want to handle that inside FileOrganizerService
-            _fileOrganizerService = new FileOrganizerService(Log, tmdbService, jikanService, cacheService);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    InitializeServices(tmdbApiKey);
+                });
+            });
         }
 
         [RelayCommand]
@@ -102,6 +74,7 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
+        private bool CanCopySelectedLog() => SelectedLogMessages.Any();
 
         [RelayCommand]
         private void ClearLogs()
@@ -116,11 +89,6 @@ namespace ShowStasher.MVVM.ViewModels
                 StatusMessage = "No logs to clear.";
             }
         }
-
-        private bool CanCopySelectedLog() => SelectedLogMessages.Any();
-
-
-
 
         [RelayCommand]
         private void BrowseSource()
@@ -144,72 +112,63 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
-
         [RelayCommand]
         private async Task PreviewAndOrganizeAsync()
         {
             if (string.IsNullOrEmpty(SourcePath) || string.IsNullOrEmpty(DestinationPath))
             {
                 StatusMessage = "Please select both source and destination folders.";
-                Log("Missing source or destination path.");
+                Log("Missing source or destination path.", AppLogLevel.Error);
                 return;
             }
 
             StatusMessage = "Preparing preview...";
-            Log("Generating dry run preview...");
+            Log("Generating dry run preview...", AppLogLevel.Action);
             IsBusy = true;
             Progress = 0;
 
             try
             {
                 var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
+                var previewViewModel = new PreviewViewModel();
 
-                var previewViewModel = new PreviewViewModel(Log);
-                // Fill preview items
                 previewViewModel.RootItems.Clear();
                 foreach (var item in previewItems)
-                {
                     previewViewModel.RootItems.Add(item);
-                }
 
-                // Create dialog first
                 var dialog = new PreviewDialog
                 {
                     DataContext = previewViewModel,
                     Owner = Application.Current.MainWindow
                 };
 
-                // Hook RequestClose after dialog exists
                 previewViewModel.RequestClose = () => dialog.Close();
 
-                // Use TrySetResult on tcs:
                 var tcs = new TaskCompletionSource<IList<PreviewItem>>();
+
                 previewViewModel.OnConfirm = _ =>
                 {
                     var checkedFiles = previewViewModel.GetCheckedFiles(previewViewModel.RootItems);
                     tcs.TrySetResult(checkedFiles);
                 };
 
-
                 previewViewModel.OnCancel = () =>
                 {
                     tcs.TrySetResult(new List<PreviewItem>());
                 };
 
-                // Show the preview dialog
                 dialog.ShowDialog();
-
                 var selectedFilesToOrganize = await tcs.Task;
 
                 if (selectedFilesToOrganize.Count == 0)
                 {
                     StatusMessage = "Organization canceled.";
-                    Log("User canceled file organization.");
+                    Log("Organization canceled by user (no files selected).", AppLogLevel.Warning);
                     return;
                 }
 
                 StatusMessage = "Organizing selected files...";
-                Log("Started organizing selected files...");
+                Log($"Starting organization of {selectedFilesToOrganize.Count} files...", AppLogLevel.Action);
 
                 var progressReporter = new Progress<int>(percent => Progress = percent);
 
@@ -217,35 +176,105 @@ namespace ShowStasher.MVVM.ViewModels
                     selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter);
 
                 StatusMessage = "Done!";
-                Log("Finished organizing selected files.");
+                Log("Finished organizing selected files.", AppLogLevel.Success);
             }
             catch (Exception ex)
             {
                 StatusMessage = "Error occurred during organizing.";
-                Log($"Error: {ex.Message}");
+                Log($"Error during organization: {ex.Message}", AppLogLevel.Error);
             }
             finally
             {
                 IsBusy = false;
             }
-
         }
 
+
         [RelayCommand]
-        private void OpenHistory()
+        private async Task OpenHistoryAsync()
         {
-            // Open the History window
-            //  new HistoryWindow().ShowDialog();
-            System.Windows.MessageBox.Show("Open History Window");
+            var historyWindow = new HistoryWindow(_dbService);
+            historyWindow.ShowDialog();
         }
 
         [RelayCommand]
         private void OpenApiKeyDialog()
         {
-            // Open the API key dialog
-            // new ApiKeyDialog().ShowDialog();
-            System.Windows.MessageBox.Show("Open ApiKey Window");
+            var window = new TmdbApiKeyWindow
+            {
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Topmost = true
+            };
+
+            var viewModel = new TmdbApiKeyViewModel(_dbService, window);
+            window.DataContext = viewModel;
+
+            window.ShowDialog();
         }
+
+
+        private void InitializeServices(string tmdbApiKey)
+        {
+            var cacheService = new SqliteDbService(Log);
+            var selectionService = new MetadataSelectionService();
+
+            TMDbService tmdbService = null;
+
+            if (string.IsNullOrWhiteSpace(tmdbApiKey))
+            {
+                Log("TMDb API key is missing.", AppLogLevel.Error);
+            }
+            else
+            {
+                tmdbService = new TMDbService(tmdbApiKey, cacheService, Log, selectionService);
+                Log("TMDb Service initialized successfully.", AppLogLevel.Success);
+            }
+
+            var jikanService = new JikanService(cacheService, Log);
+            _fileOrganizerService = new FileOrganizerService(Log, tmdbService, jikanService, cacheService);
+
+            Log("Services initialized.", AppLogLevel.Info);
+        }
+
+
+        private async Task<string> EnsureTmdbApiKeyAsync()
+        {
+            string apiKey = await _dbService.GetSettingAsync("TMDbApiKey");
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                await Task.Delay(2000); // Let MainWindow fully render
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var window = new TmdbApiKeyWindow
+                    {
+                        Owner = Application.Current.MainWindow,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                        Topmost = true
+                    };
+
+                    var viewModel = new TmdbApiKeyViewModel(_dbService, window);
+                    window.DataContext = viewModel;
+
+                    window.Activate();
+                    window.ShowDialog();
+                });
+
+                apiKey = await _dbService.GetSettingAsync("TMDbApiKey");
+
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    Log("ERROR: TMDb API key is still missing after prompt.");
+                }
+            }
+
+            return apiKey;
+        }
+
+
+
         private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
         {
             var files = new List<PreviewItem>();
@@ -257,16 +286,13 @@ namespace ShowStasher.MVVM.ViewModels
                 {
                     if (item.IsFile)
                     {
-                        // Metadata detection: simple filename check
                         var fileName = Path.GetFileName(item.DestinationPath);
                         bool isMetadata = fileName.Equals("poster.jpg", StringComparison.OrdinalIgnoreCase)
-                                       || fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase);
+                                        || fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase);
 
                         if (item.IsChecked && !isMetadata)
                         {
                             files.Add(item);
-
-                            // Track the folder where this media file resides
                             var parentFolder = Path.GetDirectoryName(item.DestinationPath);
                             if (parentFolder != null)
                                 validMetadataFolders.Add(parentFolder);
@@ -275,13 +301,10 @@ namespace ShowStasher.MVVM.ViewModels
                         {
                             var parentFolder = Path.GetDirectoryName(item.DestinationPath);
                             if (parentFolder != null && validMetadataFolders.Contains(parentFolder))
-                            {
                                 files.Add(item);
-                            }
                         }
                     }
 
-                    // Recurse
                     if (item.Children.Count > 0)
                         Traverse(item.Children);
                 }
@@ -291,13 +314,45 @@ namespace ShowStasher.MVVM.ViewModels
             return files;
         }
 
-
-        private void Log(string message)
+        public enum AppLogLevel
         {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                LogMessages.Add($"[{DateTime.Now:T}] {message}");
-            });
+            Info,
+            Success,
+            Warning,
+            Error,
+            Debug,
+            Action
         }
+
+        private void Log(string message, AppLogLevel level = AppLogLevel.Info)
+        {
+            string prefix = level switch
+            {
+                AppLogLevel.Info => "ℹ️",
+                AppLogLevel.Success => "✅",
+                AppLogLevel.Warning => "⚠️",
+                AppLogLevel.Error => "❌",
+                AppLogLevel.Debug => "[DEBUG]",
+                AppLogLevel.Action => "🔄",
+                _ => ""
+            };
+
+            var timestamped = $"[{DateTime.Now:T}] {prefix} {message}";
+
+            if (Application.Current?.Dispatcher?.HasShutdownStarted == false)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    LogMessages.Add(timestamped);
+                });
+            }
+            else
+            {
+                Debug.WriteLine($"[Log Skipped] {timestamped}");
+            }
+        }
+
+
     }
+
 }

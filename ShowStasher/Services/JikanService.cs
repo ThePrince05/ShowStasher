@@ -10,59 +10,59 @@ using Newtonsoft.Json;
 using ShowStasher.Helpers;
 using System.Text.RegularExpressions;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
+using static ShowStasher.MVVM.ViewModels.MainViewModel;
 
 namespace ShowStasher.Services
 {
     public class JikanService
     {
         private readonly HttpClient _httpClient;
-        private readonly Action<string> _log;
-        private readonly MetadataCacheService _metadataCacheService;
+        private readonly Action<string, AppLogLevel> _log;
+        private readonly SqliteDbService _dbService;
 
-        public JikanService(MetadataCacheService cache, Action<string> log)
+        public JikanService(SqliteDbService cache, Action<string, AppLogLevel> log)
         {
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri("https://api.jikan.moe/v4/")
             };
-            _metadataCacheService = cache;
+            _dbService = cache;
             _log = log;
         }
 
         public async Task<MediaMetadata?> GetAnimeMetadataAsync(string title, int? season, int? episode)
         {
-            var cached = await _metadataCacheService.GetCachedMetadataAsync(title, "Series", season, episode);
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode);
             if (cached != null)
             {
-                _log($"[Cache Hit] Anime '{title}' episode {episode} found.");
+                _log($"Cache hit for anime '{title}', episode {episode ?? 0}.", AppLogLevel.Success);
                 return cached;
             }
 
-            _log($"[Jikan] Searching for anime: '{title}'...");
+            _log($"Searching anime '{title}' via Jikan...", AppLogLevel.Info);
             var anime = await SearchAnimeByTitleAsync(title);
             if (anime == null)
             {
-                _log($"[Jikan] No match found for '{title}'.");
+                _log($"No anime match found for '{title}'.", AppLogLevel.Warning);
                 return null;
             }
 
-            // 🆕 Extract English title (fallback to original title if missing)
             string englishTitle = anime.Titles?.FirstOrDefault(t => t.Type == "English")?.Title ?? anime.Title;
             string normalizedTitle = NormalizeTitleKey(englishTitle);
             string synopsis = anime.Synopsis ?? "No synopsis available.";
             string posterUrl = anime.Images?.Jpg?.ImageUrl ?? "";
             string pgRating = anime.Rating ?? "N/A";
             int animeId = anime.MalId;
-           
+
             int fetchMalId = animeId;
             if (season.HasValue && season.Value > 1)
             {
                 fetchMalId = await GetSeasonMalIdAsync(animeId, season.Value);
-                _log($"[Jikan] Resolved Season {season.Value} MAL ID: {fetchMalId}");
+                _log($"Resolved Season {season.Value} MAL ID: {fetchMalId}.", AppLogLevel.Info);
             }
 
-            _log($"[Jikan] Using title: {englishTitle}");
-            _log($"[Jikan] Fetching ALL episodes for Anime ID {animeId}...");
+            _log($"Fetching episodes for Anime ID {fetchMalId}...", AppLogLevel.Info);
 
             var episodes = await FetchAllEpisodesAsync(fetchMalId);
             MediaMetadata? requestedEpisodeMetadata = null;
@@ -75,7 +75,7 @@ namespace ShowStasher.Services
                 var metadata = new MediaMetadata
                 {
                     Title = englishTitle,
-                    Type = "Series", // Unified type
+                    Type = "Series",
                     Synopsis = synopsis,
                     PosterUrl = posterUrl,
                     PG = pgRating,
@@ -85,24 +85,21 @@ namespace ShowStasher.Services
                     EpisodeTitle = ep.Title
                 };
 
-                await _metadataCacheService.SaveMetadataAsync(normalizedTitle, metadata);
-                _log($"[Jikan] Cached: Episode {metadata.Episode} - {metadata.EpisodeTitle}");
+                await _dbService.SaveMetadataAsync(normalizedTitle, metadata);
+                _log($"Cached episode {metadata.Episode}: {metadata.EpisodeTitle}.", AppLogLevel.Success);
 
                 if (episode.HasValue && ep.EpisodeId == episode.Value)
-                {
                     requestedEpisodeMetadata = metadata;
-                }
             }
 
             if (requestedEpisodeMetadata != null)
             {
-                _log($"[Success] Found and cached episode {episode.Value} for '{englishTitle}'.");
+                _log($"Found and cached episode {episode.Value} for '{englishTitle}'.", AppLogLevel.Success);
                 return requestedEpisodeMetadata;
             }
 
-            _log($"[Info] Requested episode not found or not specified, returning base metadata.");
+            _log($"Requested episode not found or not specified. Returning base metadata.", AppLogLevel.Info);
 
-            // ⬇️ Updated fallback metadata to also use the English title
             var genericMetadata = new MediaMetadata
             {
                 Title = englishTitle,
@@ -115,13 +112,10 @@ namespace ShowStasher.Services
                 Episode = null
             };
 
-            await _metadataCacheService.SaveMetadataAsync(normalizedTitle, genericMetadata);
-            _log($"[Generic] Saved base metadata for anime '{englishTitle}'");
+            await _dbService.SaveMetadataAsync(normalizedTitle, genericMetadata);
+            _log($"Saved base metadata for anime '{englishTitle}'.", AppLogLevel.Success);
             return genericMetadata;
         }
-
-
-
 
 
         private string NormalizeTitleKey(string title)
@@ -141,7 +135,7 @@ namespace ShowStasher.Services
 
                 if (animeList == null || animeList.Count == 0)
                 {
-                    _log($"[Jikan] No results found for \"{title}\".");
+                    _log($"No results found for \"{title}\".", AppLogLevel.Warning);
                     return null;
                 }
 
@@ -151,15 +145,16 @@ namespace ShowStasher.Services
                         string.Equals(a.TitleEnglish, title, StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(a.TitleJapanese, title, StringComparison.OrdinalIgnoreCase)) ?? animeList.First();
 
-                _log($"[Jikan] Found anime: \"{bestMatch.Title}\" (ID: {bestMatch.MalId})");
+                _log($"Found anime '{bestMatch.Title}' (ID: {bestMatch.MalId}).", AppLogLevel.Success);
                 return bestMatch;
             }
             catch (Exception ex)
             {
-                _log($"[Jikan] SearchAnimeByTitleAsync error: {ex.Message}");
+                _log($"SearchAnimeByTitleAsync error: {ex.Message}", AppLogLevel.Error);
                 return null;
             }
         }
+
 
         private async Task<List<JikanEpisode>> FetchAllEpisodesAsync(int malId)
         {
@@ -177,7 +172,7 @@ namespace ShowStasher.Services
                     if (response?.Data != null)
                     {
                         allEpisodes.AddRange(response.Data);
-                        _log($"[Jikan] Fetched page {currentPage} with {response.Data.Count} episodes.");
+                        _log($"Fetched page {currentPage} with {response.Data.Count} episodes.", AppLogLevel.Info);
                     }
 
                     hasNextPage = response?.Pagination?.HasNextPage ?? false;
@@ -185,16 +180,16 @@ namespace ShowStasher.Services
                 }
                 catch (Exception ex)
                 {
-                    _log($"[Jikan] Error fetching episodes (page {currentPage}): {ex.Message}");
+                    _log($"Error fetching episodes page {currentPage}: {ex.Message}", AppLogLevel.Error);
                     break;
                 }
 
-                // Optional: be nice to the API
+                // Be kind to the API
                 await Task.Delay(300);
             }
             while (hasNextPage);
 
-            _log($"[Jikan] Total episodes fetched: {allEpisodes.Count}");
+            _log($"Total episodes fetched: {allEpisodes.Count}.", AppLogLevel.Success);
             return allEpisodes;
         }
 

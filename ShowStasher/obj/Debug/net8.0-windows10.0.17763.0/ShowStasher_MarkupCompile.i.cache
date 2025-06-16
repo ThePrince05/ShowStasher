@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 D:\Projects\Visual Studio\ShowStasher\ShowStasher\App.xaml
-3-298682715
+5595272700
 1252317432
-39-1383068104
-2331766972463
-MVVM\Views\MainWindow.xaml;MVVM\Views\PreviewDialog.xaml;MVVM\Views\SearchSelectionDialog.xaml;
+441002447512
+271-1719690564
+MVVM\Views\HistoryWindow.xaml;MVVM\Views\MainWindow.xaml;MVVM\Views\PreviewDialog.xaml;MVVM\Views\SearchSelectionDialog.xaml;MVVM\Views\TmdbApiKeyWindow.xaml;
 
-True
+False
 
