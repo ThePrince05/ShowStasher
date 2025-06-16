@@ -53,7 +53,7 @@
                                     Binding="{Binding MovedAt, StringFormat='yyyy-MM-dd HH:mm:ss'}"
                                     Width="150" />
                 <DataGridTemplateColumn Header="Open"
-                                        Width="50">
+                                        Width="60">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="📁"
@@ -61,7 +61,7 @@
                                     Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     CommandParameter="{Binding}"
                                     Width="30"
-                                    Height="25" />
+                                    Height="30" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -75,7 +75,7 @@
                                     Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     CommandParameter="{Binding}"
                                     Width="30"
-                                    Height="25" />
+                                    Height="30" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\Projects\\Visual Studio\\ShowStasher\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\views\\historywindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\views\\historywindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|d:\\projects\\visual studio\\showstasher\\showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{53653572-6FB4-48E3-BED0-084AF51AD446}|ShowStasher\\ShowStasher.csproj|solutionrelative:showstasher\\mvvm\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -46,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 16,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -82,7 +86,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "HistoryWindow.xaml",
+              "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\HistoryWindow.xaml",
+              "RelativeDocumentMoniker": "ShowStasher\\MVVM\\Views\\HistoryWindow.xaml",
+              "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\Views\\HistoryWindow.xaml",
+              "RelativeToolTip": "ShowStasher\\MVVM\\Views\\HistoryWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-06-16T19:10:51.878Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "TMDbService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\TMDbService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\TMDbService.cs",
@@ -90,12 +106,11 @@
               "RelativeToolTip": "ShowStasher\\Services\\TMDbService.cs",
               "ViewState": "AgIAAOsBAAAAAAAAAAAuwPoBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-16T13:09:47.642Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-16T13:09:47.642Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "PreviewViewModel.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\ViewModels\\PreviewViewModel.cs",
@@ -107,7 +122,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "DialogService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\DialogService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\DialogService.cs",
@@ -119,7 +134,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "MetadataSelectionService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\MetadataSelectionService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\MetadataSelectionService.cs",
@@ -131,7 +146,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "JikanService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\JikanService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\JikanService.cs",
@@ -143,7 +158,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "SqliteDbService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\SqliteDbService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\SqliteDbService.cs",
@@ -155,7 +170,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "FilenameParser.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Helpers\\FilenameParser.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Helpers\\FilenameParser.cs",
@@ -167,26 +182,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "FileOrganizerService.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeDocumentMoniker": "ShowStasher\\Services\\FileOrganizerService.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\Services\\FileOrganizerService.cs",
               "RelativeToolTip": "ShowStasher\\Services\\FileOrganizerService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAABgDAAAAAAAAAAAewHEDAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-15T03:03:20.619Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "MainViewModel.cs",
               "DocumentMoniker": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "RelativeDocumentMoniker": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "ToolTip": "D:\\Projects\\Visual Studio\\ShowStasher\\ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
               "RelativeToolTip": "ShowStasher\\MVVM\\ViewModels\\MainViewModel.cs",
-              "ViewState": "AgIAAKUAAAAAAAAAAAAvwLMAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAABUBAAAAAAAAAIA8wCEBAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-14T07:05:28.052Z",
               "EditorCaption": ""
