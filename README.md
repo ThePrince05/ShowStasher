@@ -39,6 +39,54 @@ git clone https://github.com/ThePrince05/ShowStasher.git
 
 ✅ .NET Target: net8.0-windows  
 ✅ Minimum OS: Windows 10+ (x86)		
+## 📥 Input Folder Guidelines
+To ensure ShowStasher works correctly, follow these guidelines when choosing a source folder:
+- ✅ Put only media files directly inside the folder you select.
+- 🚫 Do not include subfolders — nested folders will be ignored.
+- 📄 Supported input file types include most video formats.
+
+##📌 Example Input Folder:
+📁 Unsorted
+├── Naruto S05E99.mkv
+├── Inception 2010.mkv
+├── 1917.2019.mp4
+├── Breaking Bad S01E01.mkv
+
+
+## 🗂️ Folder Structure Output
+ShowStasher organizes your files into a clean and consistent layout for TV shows, anime, and movies, sorted alphabetically — including titles starting with numbers.
+
+📁 Shows
+├── 📁 B
+│   └── 📁 Breaking Bad
+│       └── 📁 Season 1
+│           ├── 01 - Pilot.mkv
+│           └── 02 - Cat's in the Bag....mkv
+│
+├── 📁 N
+│   └── 📁 Naruto
+│       └── 📁 Season 5
+│           └── 099 - The Will of Fire Still Burns.mkv
+│
+├── 📁 1 - 1000
+│   └── 📁 13 Reasons Why
+│       └── 📁 Season 1
+│           └── 01 - Tape 1, Side A.mkv
+
+📁 Movies
+├── 📁 I
+│   └── 📁 Inception
+│       └── 🎬 Inception (2010).mkv
+│
+├── 📁 S
+│   └── 📁 Spider-Man Across the Spider-Verse
+│       └── 🎬 Spider-Man Across the Spider-Verse (2023).mp4
+│
+├── 📁 1 - 1000
+│   └── 📁 1917
+│       └── 🎬 1917 (2019).mkv
+
+
 
 ## 🧪 Usage
 Watch a quick demo of the app in action:  
