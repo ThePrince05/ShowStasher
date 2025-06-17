@@ -54,7 +54,7 @@ The video covers:
 
 - "For series or anime, make sure filenames include tags like S01E01 so the app can detect season and episode numbers."
 
-- "If a file isn’t picked up properly, try renaming it to a cleaner format—just the title or title with season+episode works best."
+- "If a file isn’t picked up properly, try renaming it to a cleaner format - just the title or title with S01E01 works best."
 
 ## 🤝Contributing and Contacts
 I welcome contributions, suggestions, or questions!
