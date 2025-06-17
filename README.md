@@ -96,7 +96,7 @@ ShowStasher organizes your files into a clean and consistent layout for TV shows
 
 ## 🧪 Usage
 Watch a quick demo of the app in action:  
-📺 [YouTube Demo](https://youtu.be/PBfi1NHm1hc)
+📺 [YouTube Demo](https://youtu.be/NoxNuSmkIPo)
 
 The video covers:
 - Setting up API keys
