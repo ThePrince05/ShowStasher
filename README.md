@@ -45,17 +45,21 @@ To ensure ShowStasher works correctly, follow these guidelines when choosing a s
 - 🚫 Do not include subfolders — nested folders will be ignored.
 - 📄 Supported input file types include most video formats.
 
-##📌 Example Input Folder:
-📁 Unsorted
-├── Naruto S05E99.mkv
-├── Inception 2010.mkv
-├── 1917.2019.mp4
-├── Breaking Bad S01E01.mkv
+## 📌 Example Input Folder:  
+```
+📁 Unsorted  
+├── Naruto S05E99.mkv  
+├── Inception 2010.mkv  
+├── 1917.2019.mp4  
+├── Breaking Bad S01E01.mkv  
+```
+
 
 
 ## 🗂️ Folder Structure Output
 ShowStasher organizes your files into a clean and consistent layout for TV shows, anime, and movies, sorted alphabetically — including titles starting with numbers.
 
+```
 📁 Shows
 ├── 📁 B
 │   └── 📁 Breaking Bad
@@ -85,6 +89,8 @@ ShowStasher organizes your files into a clean and consistent layout for TV shows
 ├── 📁 1 - 1000
 │   └── 📁 1917
 │       └── 🎬 1917 (2019).mkv
+```
+
 
 
 
@@ -103,6 +109,8 @@ The video covers:
 - "For series or anime, make sure filenames include tags like S01E01 so the app can detect season and episode numbers."
 
 - "If a file isn’t picked up properly, try renaming it to a cleaner format - just the title or title with S01E01 works best."
+
+- 🌀 Anime files are also moved to the  TV Series folder, and handled just like other TV series.
 
 ## 🤝Contributing and Contacts
 I welcome contributions, suggestions, or questions!
