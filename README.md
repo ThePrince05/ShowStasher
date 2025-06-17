@@ -18,7 +18,7 @@ Whether you're tidying up a messy media folder or maintaining a pristine archive
 -	🎨 Polished UI – Metro-styled interface built with MahApps.Metro		
 
 ## 🛠️ Technologies Used
--	C# (.NET 8+)
+-	C# (.NET 8)
 -	WPF (MVVM Pattern)
 -	CommunityToolkit.Mvvm
 -	SQLite
