@@ -60,7 +60,7 @@ To ensure ShowStasher works correctly, follow these guidelines when choosing a s
 ShowStasher organizes your files into a clean and consistent layout for TV shows, anime, and movies, sorted alphabetically — including titles starting with numbers.
 
 ```
-📁 Shows
+📁 TV Series
 ├── 📁 B
 │   └── 📁 Breaking Bad
 │       └── 📁 Season 1
