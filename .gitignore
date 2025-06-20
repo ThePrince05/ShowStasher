@@ -1,0 +1,69 @@
+##############################
+# Build results
+##############################
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+artifacts/
+
+##############################
+# Visual Studio files
+##############################
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+
+##############################
+# Rider/JetBrains IDE
+##############################
+.idea/
+*.sln.iml
+
+##############################
+# VS Code
+##############################
+.vscode/
+
+##############################
+# NuGet Packages
+##############################
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.assets.json
+
+##############################
+# Backup and cache files
+##############################
+*.bak
+*.cache
+*.db
+*.pidb
+*.svclog
+*.orig
+
+##############################
+# Temporary files
+##############################
+*.tmp
+*.temp
+~$*
+*.DS_Store
+Thumbs.db
+
+##############################
+# Resharper
+##############################
+_ReSharper*/
+*.DotSettings.user
+
+##############################
+# Publish
+##############################
+*.publishsettings
+*.Publish.xml
