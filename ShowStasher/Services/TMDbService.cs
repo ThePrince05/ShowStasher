@@ -271,7 +271,8 @@ namespace ShowStasher.Services
                     {
                         Id = r["id"]?.ToObject<int>() ?? 0,
                         Title = r["title"]?.ToString() ?? "",
-                        Year = DateTime.TryParse(r["release_date"]?.ToString(), out var dt) ? dt.Year : null
+                        Year = DateTime.TryParse(r["release_date"]?.ToString(), out var dt) ? dt.Year : null,
+                        PosterPath = r["poster_path"]?.ToString()
                     })
                     .ToList();
 
@@ -395,7 +396,8 @@ namespace ShowStasher.Services
                     {
                         Id = r["id"]?.ToObject<int>() ?? 0,
                         Title = r["name"]?.ToString() ?? "",
-                        Year = DateTime.TryParse(r["first_air_date"]?.ToString(), out var dt) ? dt.Year : null
+                        Year = DateTime.TryParse(r["first_air_date"]?.ToString(), out var dt) ? dt.Year : null,
+                        PosterPath = r["poster_path"]?.ToString()
                     })
                     .ToList();
 
