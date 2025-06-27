@@ -17,11 +17,15 @@ namespace ShowStasher.MVVM.Models
 
         public string DisplayTitle => Year.HasValue ? $"{Title.Trim()} ({Year})" : Title.Trim();
 
-        public string? FullPosterUrl =>
+        // Adjust this path to wherever your placeholder image is located in the project
+        private const string PlaceholderPosterPath = "pack://application:,,,/Assets/Images/placeholder.png";
+
+        public string FullPosterUrl =>
             string.IsNullOrWhiteSpace(PosterPath)
-            ? null
+            ? PlaceholderPosterPath
             : $"https://image.tmdb.org/t/p/w185{PosterPath}";
     }
+
 
 
 }

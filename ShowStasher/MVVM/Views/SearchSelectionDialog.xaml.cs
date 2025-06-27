@@ -1,5 +1,7 @@
-﻿using System;
+﻿using ShowStasher.MVVM.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,5 +25,14 @@ namespace ShowStasher.MVVM.Views
         {
             InitializeComponent();
         }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (DataContext is SearchSelectionDialogViewModel vm && vm.CancelCommand.CanExecute(null))
+            {
+                vm.CancelCommand.Execute(null);
+            }
+        }
+
     }
 }
