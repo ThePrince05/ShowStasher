@@ -448,13 +448,12 @@ namespace ShowStasher.Services
 
         private static string SanitizeFilename(string name)
         {
-            // Replace invalid filename chars with space
+            // Replace invalid filename chars with space, but allow apostrophes
             foreach (char c in Path.GetInvalidFileNameChars())
-                name = name.Replace(c, ' ');
-
+                if (c != '\'')
+                    name = name.Replace(c, ' ');
             // Collapse multiple spaces/underscores
             name = Regex.Replace(name, @"[_\s]{2,}", " ").Trim();
-
             return name;
         }
 
@@ -553,7 +552,13 @@ namespace ShowStasher.Services
                 string relativeDestination = GetRelativeDestinationPath(renamedFile, metadata);
                 string fullRelativePath = Path.Combine("PREVIEW DESTINATION", relativeDestination);
                 var pathParts = fullRelativePath.Split(Path.DirectorySeparatorChar);
-                
+
+                // Remove apostrophes from folder names for display in dry run
+                for (int i = 0; i < pathParts.Length - 1; i++)
+                {
+                    pathParts[i] = pathParts[i].Replace("'", "");
+                }
+
                 string renamedBase = Path.GetFileNameWithoutExtension(Path.GetFileName(relativeDestination));
                 AddFileToPreviewTree(rootItems, pathParts, file, renamedBase);
 
@@ -815,7 +820,11 @@ namespace ShowStasher.Services
         private string Sanitize(string input)
         {
             foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                if (c == '\'') // Allow apostrophe
+                    continue;
                 input = input.Replace(c, '_');
+            }
             return input;
         }
 
@@ -921,7 +930,8 @@ namespace ShowStasher.Services
 
         private string NormalizeTitleKey(string title)
         {
-            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
+            // Allow apostrophes by including ' in the character class
+            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s']", "")
                         .Trim(); // remove surrounding whitespace
         }
 
