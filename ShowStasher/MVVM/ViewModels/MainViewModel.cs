@@ -194,7 +194,7 @@ namespace ShowStasher.MVVM.ViewModels
         private async Task OpenHistoryAsync()
         {
             var historyWindow = new HistoryWindow(_dbService);
-            historyWindow.ShowDialog();
+            historyWindow.Show();
         }
 
         [RelayCommand]
@@ -210,7 +210,7 @@ namespace ShowStasher.MVVM.ViewModels
             var viewModel = new TmdbApiKeyViewModel(_dbService, window);
             window.DataContext = viewModel;
 
-            window.ShowDialog();
+            window.Show();
         }
 
 
@@ -220,7 +220,6 @@ namespace ShowStasher.MVVM.ViewModels
             var selectionService = new MetadataSelectionService();
 
             TMDbService tmdbService = null;
-
             if (string.IsNullOrWhiteSpace(tmdbApiKey))
             {
                 Log("TMDb API key is missing.", AppLogLevel.Error);
@@ -232,7 +231,9 @@ namespace ShowStasher.MVVM.ViewModels
             }
 
             var jikanService = new JikanService(cacheService, Log);
-            _fileOrganizerService = new FileOrganizerService(Log, tmdbService, jikanService, cacheService);
+
+            var displayTitleResolverService = new DisplayTitleResolverService(tmdbService, jikanService, Log);
+            _fileOrganizerService = new FileOrganizerService(Log, tmdbService, jikanService, cacheService, displayTitleResolverService);
 
             Log("Services initialized.", AppLogLevel.Info);
         }
@@ -273,46 +274,6 @@ namespace ShowStasher.MVVM.ViewModels
             return apiKey;
         }
 
-
-
-        private List<PreviewItem> GetCheckedFiles(IEnumerable<PreviewItem> items)
-        {
-            var files = new List<PreviewItem>();
-            var validMetadataFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            void Traverse(IEnumerable<PreviewItem> children)
-            {
-                foreach (var item in children)
-                {
-                    if (item.IsFile)
-                    {
-                        var fileName = Path.GetFileName(item.DestinationPath);
-                        bool isMetadata = fileName.Equals("poster.jpg", StringComparison.OrdinalIgnoreCase)
-                                        || fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase);
-
-                        if (item.IsChecked && !isMetadata)
-                        {
-                            files.Add(item);
-                            var parentFolder = Path.GetDirectoryName(item.DestinationPath);
-                            if (parentFolder != null)
-                                validMetadataFolders.Add(parentFolder);
-                        }
-                        else if (isMetadata)
-                        {
-                            var parentFolder = Path.GetDirectoryName(item.DestinationPath);
-                            if (parentFolder != null && validMetadataFolders.Contains(parentFolder))
-                                files.Add(item);
-                        }
-                    }
-
-                    if (item.Children.Count > 0)
-                        Traverse(item.Children);
-                }
-            }
-
-            Traverse(items);
-            return files;
-        }
 
         public enum AppLogLevel
         {

@@ -9,6 +9,7 @@ namespace ShowStasher.MVVM.Models
     // Models/MediaMetadata.cs
     public class MediaMetadata
     {
+        public string LookupKey { get; set; } // Normalized filename key for cache lookups
         public string Title { get; set; }
         public string Type { get; set; } // Movie, Series, Anime
         public int? Year { get; set; }

@@ -21,14 +21,16 @@ namespace ShowStasher.Services
         private readonly TMDbService _tmdbService;
         private readonly JikanService _jikanService;
         private readonly SqliteDbService _dbService;
+        private readonly DisplayTitleResolverService _displayTitleResolver;
 
 
-        public FileOrganizerService(Action<string, AppLogLevel> log, TMDbService tmdbService, JikanService jikanService, SqliteDbService cacheService)
+        public FileOrganizerService(Action<string, AppLogLevel> log, TMDbService tmdbService, JikanService jikanService, SqliteDbService cacheService, DisplayTitleResolverService displayTitleResolver)
         {
             _log = log;
             _tmdbService = tmdbService;
             _jikanService = jikanService;
             _dbService = cacheService;
+            _displayTitleResolver = displayTitleResolver;
         }
 
         public async Task OrganizeFilesAsync(
@@ -57,76 +59,83 @@ namespace ShowStasher.Services
             var processedEpisodes = new HashSet<string>();
             _log($"Organizing {totalFiles} files...", AppLogLevel.Action);
 
-            foreach (var file in selectedFiles)
+            await Task.Run(async () =>
             {
-                try
+                foreach (var file in selectedFiles)
                 {
-                    var parsed = FilenameParser.Parse(file);
-                    if (string.IsNullOrWhiteSpace(parsed.Title))
+                    try
                     {
-                        _log($"Skipped: Could not parse title from '{Path.GetFileName(file)}'.", AppLogLevel.Warning);
-                        continue;
-                    }
-
-                    string episodeKey = $"{parsed.Title}|S{parsed.Season}|E{parsed.Episode}";
-                    if (!processedEpisodes.Add(episodeKey))
-                    {
-                        _log($"Skipped duplicate episode: {episodeKey}", AppLogLevel.Debug);
-                        continue;
-                    }
-
-                    MediaMetadata? metadata;
-
-                    if (isOfflineMode)
-                    {
-                        _log($"Offline mode: Loading metadata for '{parsed.Title}' from cache...", AppLogLevel.Debug);
-                        metadata = await TryLoadFromCacheOnly(parsed);
-
-                        if (metadata == null)
+                        var parsed = FilenameParser.Parse(file);
+                        if (string.IsNullOrWhiteSpace(parsed.Title))
                         {
-                            _log($"No cached metadata found for '{parsed.Title}', falling back to filename data.", AppLogLevel.Warning);
-                            metadata = new MediaMetadata
-                            {
-                                Title = parsed.Title,
-                                Season = parsed.Season,
-                                Episode = parsed.Episode,
-                                Type = parsed.Type
-                            };
-                        }
-                    }
-                    else
-                    {
-                        metadata = await EnsureMetadataInCacheAsync(parsed, isOfflineMode);
-
-                        if (metadata == null)
-                        {
-                            _log($"Skipped: Metadata not found for '{parsed.Title}' S{parsed.Season}E{parsed.Episode}.", AppLogLevel.Warning);
+                            _log($"Skipped: Could not parse title from '{Path.GetFileName(file)}'.", AppLogLevel.Warning);
                             continue;
                         }
-                    }
 
-                    if (metadata.Type == "Series")
-                    {
-                        _log($"Organizing: {metadata.Title} S{metadata.Season:D2}E{metadata.Episode:D2} – {metadata.EpisodeTitle}", AppLogLevel.Action);
-                    }
-                    else
-                    {
-                        _log($"Organizing movie: {metadata.Title}", AppLogLevel.Action);
-                    }
+                        string episodeKey = parsed.Type == "Series"
+                        ? $"{parsed.Title}|S{parsed.Season ?? -1:00}|E{parsed.Episode ?? -1:00}"
+                        : $"{parsed.Title}|Movie";
 
-                    await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
+                        if (!processedEpisodes.Add(episodeKey))
+                        {
+                            _log($"Skipped duplicate episode: {episodeKey}", AppLogLevel.Debug);
+                            continue;
+                        }
+
+                        MediaMetadata? metadata;
+
+                        if (isOfflineMode)
+                        {
+                            _log($"Offline mode: Loading metadata for '{parsed.Title}' from cache...", AppLogLevel.Debug);
+                            metadata = await TryLoadFromCacheOnly(parsed);
+
+                            if (metadata == null)
+                            {
+                                _log($"No cached metadata found for '{parsed.Title}', falling back to filename data.", AppLogLevel.Warning);
+                                metadata = new MediaMetadata
+                                {
+                                    LookupKey = parsed.Title,
+                                    Title = parsed.Title,
+                                    Season = parsed.Season,
+                                    Episode = parsed.Episode,
+                                    Type = parsed.Type
+                                };
+                            }
+                        }
+                        else
+                        {
+                            metadata = await EnsureMetadataInCacheAsync(parsed, isOfflineMode);
+
+                            if (metadata == null)
+                            {
+                                _log($"Skipped: Metadata not found for '{parsed.Title}' S{parsed.Season}E{parsed.Episode}.", AppLogLevel.Warning);
+                                continue;
+                            }
+                        }
+
+                        if (metadata.Type == "Series")
+                        {
+                            _log($"Organizing: {metadata.Title} S{metadata.Season:D2}E{metadata.Episode:D2} – {metadata.EpisodeTitle}", AppLogLevel.Action);
+                        }
+                        else
+                        {
+                            _log($"Organizing movie: {metadata.Title}", AppLogLevel.Action);
+                        }
+
+                        await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log($"Error processing '{Path.GetFileName(file)}': {ex.Message}", AppLogLevel.Error);
+                    }
+                    finally
+                    {
+                        processedCount++;
+                        double progressOffset = 1.0 + (processedCount / (double)totalFiles) * 99.0;
+                        progress?.Report((int)progressOffset);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _log($"Error processing '{Path.GetFileName(file)}': {ex.Message}", AppLogLevel.Error);
-                }
-                finally
-                {
-                    processedCount++;
-                    double progressOffset = 1.0 + (processedCount / (double)totalFiles) * 99.0;
-                    progress?.Report((int)progressOffset);
-                }
-            }
+            });
 
             _log("Organization complete.", AppLogLevel.Success);
         }
@@ -149,10 +158,14 @@ namespace ShowStasher.Services
             }
         }
 
-
-
         private async Task<MediaMetadata?> TryLoadFromCacheOnly(ParsedMediaInfo parsed)
         {
+            if (string.IsNullOrWhiteSpace(parsed.Title))
+            {
+                _log("Parsed title is null/empty during cache lookup — skipping", AppLogLevel.Warning);
+                return null;
+            }
+
             string normalizedKey = NormalizeTitleKey(parsed.Title);
             int sentinel = -1;
 
@@ -199,182 +212,125 @@ namespace ShowStasher.Services
 
         private async Task<MediaMetadata?> EnsureMetadataInCacheAsync(ParsedMediaInfo parsed, bool isOfflineMode)
         {
-            string normalizedKey = NormalizeTitleKey(parsed.Title);
-            int sentinel = -1;
+            if (string.IsNullOrWhiteSpace(parsed.Title))
+            {
+                _log("Parsed title is null/empty during metadata ensure — skipping", AppLogLevel.Warning);
+                return null;
+            }
 
-            _log($"Ensuring metadata: Title='{parsed.Title}', Type='{parsed.Type}', Year={parsed.Year}, Season={parsed.Season}, Episode={parsed.Episode}", AppLogLevel.Debug);
+            string normalizedKey = NormalizeTitleKey(parsed.Title);
+            _log($"Ensuring metadata: ParsedTitle='{parsed.Title}', Type='{parsed.Type}', Year={parsed.Year}, Season={parsed.Season}, Episode={parsed.Episode}", AppLogLevel.Debug);
 
             try
             {
-                // SERIES / ANIME
-                if (!parsed.Type.Equals("Movie", StringComparison.OrdinalIgnoreCase))
+                // --- check cache first ---
+                var cached = await _dbService.GetCachedMetadataAsync(normalizedKey, parsed.Type, parsed.Year, parsed.Season, parsed.Episode);
+                if (cached != null)
                 {
-                    var cached1 = await _dbService.GetCachedMetadataAsync(normalizedKey, parsed.Type, null, parsed.Season, parsed.Episode);
-                    if (cached1 != null)
+                    cached.Type = parsed.Type;
+                    cached.LookupKey = normalizedKey;
+                    _log($"Cache hit for key='{normalizedKey}' -> using cached display title '{cached.Title}'", AppLogLevel.Success);
+                    return cached;
+                }
+
+                if (isOfflineMode)
+                {
+                    _log($"Offline mode: No cache found for '{parsed.Title}' (key='{normalizedKey}')", AppLogLevel.Info);
+                    return null;
+                }
+
+                // Resolve display title (keep this; it may just return the filename if nothing found)
+                // OPTIONAL: consider passing parsed.Type to ResolveDisplayTitleAsync so it doesn't try the wrong type.
+                string displayTitle = await _displayTitleResolver.ResolveDisplayTitleAsync(parsed, isOfflineMode);
+
+                MediaMetadata? fetched = null;
+
+                // Branch by parsed.Type — this prevents Movie filenames from triggering Series lookups
+                if (parsed.Type.Equals("Anime", StringComparison.OrdinalIgnoreCase))
+                {
+                    try { fetched = await _jikanService.GetAnimeMetadataAsync(parsed.Title, parsed.Season, parsed.Episode); }
+                    catch (Exception ex) { _log($"Jikan fetch failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error); }
+
+                    if (fetched == null)
                     {
-                        _log($"Cache hit (no year) for series/anime '{parsed.Title}'", AppLogLevel.Success);
-                        cached1.Type = parsed.Type;
-                        return cached1;
+                        try { fetched = await _tmdbService.GetSeriesMetadataAsync(parsed.Title, parsed.Season, parsed.Episode); }
+                        catch (Exception ex) { _log($"TMDb fallback failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error); }
                     }
+                }
+                else if (parsed.Type.Equals("Series", StringComparison.OrdinalIgnoreCase))
+                {
+                    try { fetched = await _tmdbService.GetSeriesMetadataAsync(parsed.Title, parsed.Season, parsed.Episode); }
+                    catch (Exception ex) { _log($"TMDb series fetch failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error); }
 
-                    var cached2 = await _dbService.GetCachedMetadataAsync(normalizedKey, parsed.Type, parsed.Year, parsed.Season, parsed.Episode);
-                    if (cached2 != null)
+                    // Optionally: fallback to anime (Jikan) only if you think some series are anime
+                    if (fetched == null)
                     {
-                        _log($"Cache hit (with year) for series/anime '{parsed.Title}'", AppLogLevel.Success);
-                        cached2.Type = parsed.Type;
-                        return cached2;
+                        try { fetched = await _jikanService.GetAnimeMetadataAsync(parsed.Title, parsed.Season, parsed.Episode); }
+                        catch (Exception ex) { _log($"Jikan fallback failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error); }
                     }
+                }
+                else // treat as Movie (default) — do NOT look up series
+                {
+                    try { fetched = await _tmdbService.GetMovieMetadataAsync(parsed.Title, parsed.Year); }
+                    catch (Exception ex) { _log($"TMDb movie fetch failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error); }
 
-                    _log($"No cache found for series/anime '{parsed.Title}'", AppLogLevel.Warning);
+                    // Optional fallback: if movie fetch fails, you can still try series only if you explicitly want that.
+                    // But per your request, we avoid series lookups here.
+                }
 
-                    if (isOfflineMode)
+                if (fetched != null)
+                {
+                    // attach parsed context
+                    fetched.Type = parsed.Type;
+                    fetched.Season = parsed.Season;
+                    fetched.Episode = parsed.Episode;
+                    fetched.LookupKey = normalizedKey;
+                    if (!string.IsNullOrWhiteSpace(displayTitle) && string.IsNullOrWhiteSpace(fetched.Title))
+                        fetched.Title = displayTitle;
+
+                    // Save/cache under normalized key if not present
+                    var exist = await _dbService.GetCachedMetadataAsync(normalizedKey, parsed.Type, parsed.Year, parsed.Season, parsed.Episode);
+                    if (exist == null)
                     {
-                        _log($"Offline mode: Skipping online fetch for '{parsed.Title}'", AppLogLevel.Info);
-                        return null;
-                    }
-
-                    MediaMetadata? fetched = null;
-
-                    if (parsed.Type.Equals("Anime", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try
-                        {
-                            fetched = await _jikanService.GetAnimeMetadataAsync(parsed.Title, parsed.Season, parsed.Episode);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log($"Jikan fetch failed: {parsed.Title} S{parsed.Season}E{parsed.Episode} – {ex.Message}", AppLogLevel.Error);
-                        }
-
-                        if (fetched == null)
-                        {
-                            try
-                            {
-                                fetched = await _tmdbService.GetSeriesMetadataAsync(parsed.Title, parsed.Season, parsed.Episode);
-                            }
-                            catch (Exception ex)
-                            {
-                                _log($"TMDb fallback fetch failed: {parsed.Title} S{parsed.Season}E{parsed.Episode} – {ex.Message}", AppLogLevel.Error);
-                            }
-                        }
+                        _log($"Caching new metadata under key='{normalizedKey}' (DisplayTitle='{fetched.Title ?? displayTitle}')", AppLogLevel.Action);
+                        await _dbService.SaveMetadataAsync(normalizedKey, fetched);
                     }
                     else
                     {
-                        try
-                        {
-                            fetched = await _tmdbService.GetSeriesMetadataAsync(parsed.Title, parsed.Season, parsed.Episode);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log($"TMDb fetch failed: {parsed.Title} S{parsed.Season}E{parsed.Episode} – {ex.Message}", AppLogLevel.Error);
-                        }
-
-                        if (fetched == null)
-                        {
-                            try
-                            {
-                                fetched = await _jikanService.GetAnimeMetadataAsync(parsed.Title, parsed.Season, parsed.Episode);
-                            }
-                            catch (Exception ex)
-                            {
-                                _log($"Jikan fallback fetch failed: {parsed.Title} S{parsed.Season}E{parsed.Episode} – {ex.Message}", AppLogLevel.Error);
-                            }
-                        }
+                        _log($"Metadata already cached for key='{normalizedKey}'", AppLogLevel.Info);
                     }
 
-                    if (fetched != null)
-                    {
-                        try
-                        {
-                            fetched.Type = parsed.Type;
-                            fetched.Title = parsed.Title;
-                            fetched.Season = parsed.Season;
-                            fetched.Episode = parsed.Episode;
-
-                            var exist = await _dbService.GetCachedMetadataAsync(normalizedKey, parsed.Type, parsed.Year, parsed.Season, parsed.Episode);
-                            if (exist == null)
-                            {
-                                _log($"Caching new metadata for '{parsed.Title}'", AppLogLevel.Action);
-                                await _dbService.SaveMetadataAsync(normalizedKey, fetched);
-                            }
-                            else
-                            {
-                                _log($"Metadata already cached for '{parsed.Title}'", AppLogLevel.Info);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _log($"Failed to cache fetched metadata: {parsed.Title} – {ex.Message}", AppLogLevel.Error);
-                        }
-
-                        return fetched;
-                    }
-
-                    _log($"Failed to fetch metadata for series/anime '{parsed.Title}'", AppLogLevel.Error);
-                    return null;
+                    return fetched;
                 }
-                // MOVIE
-                else
+
+                // If fetch failed, create minimal metadata (so organizer still has a nice title)
+                if (!string.IsNullOrWhiteSpace(displayTitle))
                 {
-                    var cachedMovie = await _dbService.GetCachedMetadataAsync(normalizedKey, "movie", parsed.Year, sentinel, sentinel);
-                    if (cachedMovie != null)
+                    var minimal = new MediaMetadata
                     {
-                        _log($"Cache hit for movie '{parsed.Title}'", AppLogLevel.Success);
-                        cachedMovie.Type = "Movie";
-                        return cachedMovie;
-                    }
-
-                    if (isOfflineMode)
-                    {
-                        _log($"Offline mode: Skipping TMDb fetch for '{parsed.Title}'", AppLogLevel.Info);
-                        return null;
-                    }
-
-                    _log($"Fetching TMDb metadata for movie '{parsed.Title}'", AppLogLevel.Action);
-
-                    MediaMetadata? movieMeta = null;
-                    try
-                    {
-                        movieMeta = await _tmdbService.GetMovieMetadataAsync(parsed.Title.Trim());
-                    }
-                    catch (Exception ex)
-                    {
-                        _log($"TMDb movie fetch failed: {parsed.Title} – {ex.Message}", AppLogLevel.Error);
-                    }
-
-                    if (movieMeta == null)
-                    {
-                        _log($"Failed to fetch movie metadata for '{parsed.Title}'", AppLogLevel.Error);
-                        return null;
-                    }
-
-                    movieMeta.Type = "Movie";
-                    movieMeta.Title = parsed.Title;
-                    movieMeta.Season = sentinel;
-                    movieMeta.Episode = sentinel;
-                    if (!movieMeta.Year.HasValue && parsed.Year.HasValue)
-                        movieMeta.Year = parsed.Year;
+                        LookupKey = normalizedKey,
+                        Title = displayTitle,
+                        Type = parsed.Type,
+                        Year = parsed.Year,
+                        Season = parsed.Season,
+                        Episode = parsed.Episode
+                    };
 
                     try
                     {
-                        var exist = await _dbService.GetCachedMetadataAsync(normalizedKey, "movie", movieMeta.Year, sentinel, sentinel);
-                        if (exist == null)
-                        {
-                            _log($"Caching new movie metadata for '{parsed.Title}'", AppLogLevel.Action);
-                            await _dbService.SaveMetadataAsync(normalizedKey, movieMeta);
-                        }
-                        else
-                        {
-                            _log($"Movie metadata already cached for '{parsed.Title}'", AppLogLevel.Info);
-                        }
+                        _log($"Caching minimal metadata under key='{normalizedKey}' (DisplayTitle='{displayTitle}')", AppLogLevel.Action);
+                        await _dbService.SaveMetadataAsync(normalizedKey, minimal);
                     }
                     catch (Exception ex)
                     {
-                        _log($"Failed to cache movie metadata: {parsed.Title} – {ex.Message}", AppLogLevel.Error);
+                        _log($"Failed to cache minimal metadata for '{parsed.Title}' – {ex.Message}", AppLogLevel.Error);
                     }
 
-                    return movieMeta;
+                    return minimal;
                 }
+
+                _log($"Failed to fetch metadata for '{parsed.Title}' and no display title resolved.", AppLogLevel.Error);
+                return null;
             }
             catch (Exception ex)
             {
@@ -385,25 +341,21 @@ namespace ShowStasher.Services
 
 
 
-
         private async Task MoveAndOrganizeAsync(string filePath, MediaMetadata metadata, string destinationRoot, bool isOfflineMode)
         {
             _log($"Organizing file using metadata: Title='{metadata.Title}', Year={metadata.Year}", AppLogLevel.Debug);
 
-            // Determine the destination folder and ensure it exists
-            string targetFolder = GetTargetFolder(destinationRoot, metadata, metadata.Type);
+            string targetFolder = GetTargetFolder(destinationRoot, metadata, metadata.Type, isOfflineMode);
             Directory.CreateDirectory(targetFolder);
 
-            // Determine root folder to store additional media files like posters/synopsis
             string metadataRootFolder = metadata.Type == "Series"
                 ? Directory.GetParent(targetFolder)!.FullName
                 : targetFolder;
 
-            // Decide the file extension and filename
             string extension = Path.GetExtension(filePath);
             string newFileName = metadata.Type == "Series" && metadata.Season.HasValue && metadata.Episode.HasValue
                 ? GenerateEpisodeFilename(metadata, extension)
-                : $"{SanitizeFilename(ToTitleCase(metadata.Title))}{extension}";
+                : $"{SanitizeFilename(ToTitleCase(isOfflineMode && !string.IsNullOrWhiteSpace(metadata.LookupKey) ? metadata.LookupKey : metadata.Title))}{extension}";
 
             string newFilePath = Path.Combine(targetFolder, newFileName);
 
@@ -457,11 +409,15 @@ namespace ShowStasher.Services
             return name;
         }
 
-        private string GetTargetFolder(string root, MediaMetadata metadata, string type)
+        private string GetTargetFolder(string root, MediaMetadata metadata, string type, bool isOfflineMode)
         {
             string kind = type;
 
-            string titleBase = ToTitleCase(SanitizeFilename(metadata.Title));
+            // Use filename in offline mode, server name in online mode
+            string titleBase = isOfflineMode && !string.IsNullOrWhiteSpace(metadata.LookupKey)
+                ? ToTitleCase(SanitizeFilename(metadata.LookupKey))
+                : ToTitleCase(SanitizeFilename(metadata.Title));
+
             string safeTitle = metadata.Year.HasValue
                 ? $"{titleBase} ({metadata.Year.Value})"
                 : titleBase;
@@ -503,6 +459,7 @@ namespace ShowStasher.Services
             {
                 string fileName = Path.GetFileName(file);
 
+                // Skip existing extra files
                 if (fileName.Equals("poster.jpg", StringComparison.OrdinalIgnoreCase) ||
                     fileName.Equals("synopsis.txt", StringComparison.OrdinalIgnoreCase))
                 {
@@ -517,22 +474,19 @@ namespace ShowStasher.Services
                     continue;
                 }
 
-                MediaMetadata? metadata = null;
+                MediaMetadata? metadata;
 
                 if (isOfflineMode)
                 {
-                    metadata = await TryLoadFromCacheOnly(parsed);
-                    if (metadata == null)
+                    metadata = await TryLoadFromCacheOnly(parsed) ?? new MediaMetadata
                     {
-                        _log($"No cached metadata for '{parsed.Title}' (offline mode) — using fallback", AppLogLevel.Warning);
-                        metadata = new MediaMetadata
-                        {
-                            Title = parsed.Title,
-                            Type = parsed.Type,
-                            Season = parsed.Season,
-                            Episode = parsed.Episode
-                        };
-                    }
+                        Title = parsed.Title,
+                        LookupKey = parsed.Title,
+                        Type = parsed.Type,
+                        Season = parsed.Season,
+                        Episode = parsed.Episode,
+                        Year = parsed.Year
+                    };
                 }
                 else
                 {
@@ -545,57 +499,78 @@ namespace ShowStasher.Services
                 }
 
                 string extension = Path.GetExtension(file);
-                string renamedFile = (metadata.Type == "Series" && metadata.Season.HasValue && metadata.Episode.HasValue)
-                    ? GenerateEpisodeFilename(metadata, extension)
-                    : $"{SanitizeFilename(ToTitleCase(metadata.Title))}{extension}";
 
-                string relativeDestination = GetRelativeDestinationPath(renamedFile, metadata);
-                string fullRelativePath = Path.Combine("PREVIEW DESTINATION", relativeDestination);
-                var pathParts = fullRelativePath.Split(Path.DirectorySeparatorChar);
+                // --- Build folder path and file name for the preview tree ---
+                string relativeFolderPath;
+                string fileNameForPreview;
+                string extrasFolderPath = null; // folder for poster/synopsis
 
-                // Remove apostrophes from folder names for display in dry run
-                for (int i = 0; i < pathParts.Length - 1; i++)
+                if (metadata.Type == "Series" && metadata.Season.HasValue)
                 {
-                    pathParts[i] = pathParts[i].Replace("'", "");
-                }
+                    // TV Series/S/Secrets/Season 1
+                    string firstLetterFolder = (metadata.Title?[0].ToString().ToUpper() ?? "Unknown");
+                    string seriesFolder = metadata.Title ?? parsed.Title;
+                    string seasonFolder = $"Season {metadata.Season.Value}"; // no zero padding
 
-                string renamedBase = Path.GetFileNameWithoutExtension(Path.GetFileName(relativeDestination));
-                AddFileToPreviewTree(rootItems, pathParts, file, renamedBase);
+                    relativeFolderPath = Path.Combine("PREVIEW DESTINATION", "TV Series", firstLetterFolder, seriesFolder, seasonFolder);
 
-                string metadataRoot;
-                if (pathParts.Length >= 4)
-                {
-                    metadataRoot = Path.Combine(pathParts[0], pathParts[1], pathParts[2], pathParts[3]);
+                    // Episode filename
+                    fileNameForPreview = GenerateEpisodeFilename(metadata, extension); // e.g., 01 - Pilot.mkv
+
+                    // Extras folder is the series root, not the season folder
+                    extrasFolderPath = Path.Combine("PREVIEW DESTINATION", "TV Series", firstLetterFolder, seriesFolder);
                 }
                 else
                 {
-                    _log($"Invalid folder structure for '{file}' — skipping metadata extras", AppLogLevel.Warning);
-                    continue;
+                    // Movies/A/Anaconda (2025)/Anaconda.mkv
+                    string firstLetterFolder = (metadata.Title?[0].ToString().ToUpper() ?? "Unknown");
+
+                    // Use proper title-casing for folder and filename
+                    string movieTitle = metadata.Title ?? parsed.Title;
+                    string titleCased = ToTitleCase(movieTitle); // helper method below
+
+                    string movieFolder = titleCased;
+                    if (metadata.Year.HasValue)
+                        movieFolder += $" ({metadata.Year.Value})";
+
+                    relativeFolderPath = Path.Combine("PREVIEW DESTINATION", "Movies", firstLetterFolder, movieFolder);
+
+                    // Filename is now title-cased + extension
+                    fileNameForPreview = titleCased + extension;
+
+                    // Extras folder is the movie folder itself
+                    extrasFolderPath = relativeFolderPath;
                 }
 
-                if (!isOfflineMode && !addedExtras.Contains(metadataRoot))
+
+                // Split into path parts for the tree
+                var pathParts = relativeFolderPath.Split(Path.DirectorySeparatorChar);
+
+                // Remove apostrophes from folder names
+                for (int i = 0; i < pathParts.Length; i++)
+                    pathParts[i] = pathParts[i].Replace("'", "");
+
+                // Add the actual file to the preview tree
+                AddFileToPreviewTree(rootItems, pathParts.Append(fileNameForPreview).ToArray(), file, fileNameForPreview);
+
+                // --- Add poster.jpg and synopsis.txt in extrasFolderPath ---
+                if (!addedExtras.Contains(extrasFolderPath))
                 {
-                    addedExtras.Add(metadataRoot);
+                    addedExtras.Add(extrasFolderPath);
 
-                    var synopsisParts = metadataRoot
-                        .Split(Path.DirectorySeparatorChar)
-                        .Select(ToTitleCase)
-                        .Append("synopsis.txt")
-                        .ToArray();
-                    AddFileToPreviewTree(rootItems, synopsisParts, null);
-
-                    var posterParts = metadataRoot
-                        .Split(Path.DirectorySeparatorChar)
-                        .Select(ToTitleCase)
-                        .Append("poster.jpg")
+                    var extrasParts = extrasFolderPath.Split(Path.DirectorySeparatorChar)
+                        .Select(p => p.Replace("'", "")) // just in case
                         .ToArray();
 
-                    AddFileToPreviewTree(rootItems, posterParts, null);
+                    AddFileToPreviewTree(rootItems, extrasParts.Append("synopsis.txt").ToArray(), null);
+                    AddFileToPreviewTree(rootItems, extrasParts.Append("poster.jpg").ToArray(), null);
                 }
             }
 
             return rootItems;
         }
+
+
 
 
         private string GenerateEpisodeFilename(MediaMetadata metadata, string extension)
@@ -725,14 +700,18 @@ namespace ShowStasher.Services
 
 
 
-        public string GetRelativeDestinationPath(string sourceFilePath, MediaMetadata metadata)
+        public string GetRelativeDestinationPath(string sourceFilePath, MediaMetadata metadata, bool isOfflineMode)
         {
             string extension = Path.GetExtension(sourceFilePath) ?? "";
 
+            // Decide which title to use: offline → original filename, online → TMDb title
+            string titleToUse = isOfflineMode && !string.IsNullOrWhiteSpace(metadata.LookupKey)
+                ? metadata.LookupKey
+                : metadata.Title;
+
             if (metadata.Type == "Movie")
             {
-                // Sanitize movie title
-                string safeTitle = ToTitleCase(Sanitize(metadata.Title));
+                string safeTitle = ToTitleCase(Sanitize(titleToUse));
 
                 // Try to extract the year
                 string yearPart = "";
@@ -748,17 +727,11 @@ namespace ShowStasher.Services
                     if (yearMatch.Success)
                     {
                         yearPart = yearMatch.Value;
-                    }
+                      }
                 }
 
-                // Folder: Sinners (2025)
-                string folderName = string.IsNullOrEmpty(yearPart)
-                    ? safeTitle
-                    : $"{safeTitle} ({yearPart})";
-
-                // Filename: Sinners.mp4
+                string folderName = string.IsNullOrEmpty(yearPart) ? safeTitle : $"{safeTitle} ({yearPart})";
                 string newFileName = $"{safeTitle}{extension}";
-
                 var firstLetter = GetFirstLetter(safeTitle);
                 return Path.Combine("Movies", firstLetter, folderName, newFileName);
             }
@@ -773,17 +746,17 @@ namespace ShowStasher.Services
                     : $"{epNum} - {Sanitize(episodeTitle)}";
 
                 var episodeFile = $"{safeEpisodeTitle}{extension}";
-                var firstLetter = GetFirstLetter(metadata.Title);
+                var firstLetter = GetFirstLetter(titleToUse);
 
-                return Path.Combine("TV Series", firstLetter, metadata.Title, $"Season {metadata.Season}", episodeFile);
+                return Path.Combine("TV Series", firstLetter, titleToUse, $"Season {metadata.Season}", episodeFile);
             }
-
             else
             {
                 // Fallback
                 return Path.GetFileName(sourceFilePath);
             }
         }
+
 
         private bool TryGetYearFromMetadata(MediaMetadata metadata, out int year)
         {
@@ -928,12 +901,15 @@ namespace ShowStasher.Services
         }
 
 
-        private string NormalizeTitleKey(string title)
+        private string NormalizeTitleKey(string? title)
         {
-            // Allow apostrophes by including ' in the character class
+            if (string.IsNullOrWhiteSpace(title))
+                return ""; // or "" if you prefer empty key
+
             return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s']", "")
-                        .Trim(); // remove surrounding whitespace
+                        .Trim();
         }
+
 
     }
 

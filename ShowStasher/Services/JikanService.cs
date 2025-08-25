@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using ShowStasher.Helpers;
+using ShowStasher.MVVM.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using ShowStasher.MVVM.Models;
 using System.Net.Http;
-using Newtonsoft.Json;
-using ShowStasher.Helpers;
-using System.Text.RegularExpressions;
 using System.Net.Http.Json;
-using Microsoft.Extensions.Logging;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Windows.Media.Protection.PlayReady;
 using static ShowStasher.MVVM.ViewModels.MainViewModel;
 
 namespace ShowStasher.Services
@@ -33,7 +34,7 @@ namespace ShowStasher.Services
 
         public async Task<MediaMetadata?> GetAnimeMetadataAsync(string title, int? season, int? episode)
         {
-            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode);
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode).ConfigureAwait(false);
             if (cached != null)
             {
                 _log($"Cache hit for anime '{title}', episode {episode ?? 0}.", AppLogLevel.Success);
@@ -41,15 +42,19 @@ namespace ShowStasher.Services
             }
 
             _log($"Searching anime '{title}' via Jikan...", AppLogLevel.Info);
-            var anime = await SearchAnimeByTitleAsync(title);
+            var anime = await SearchAnimeByTitleAsync(title).ConfigureAwait(false);
             if (anime == null)
             {
                 _log($"No anime match found for '{title}'.", AppLogLevel.Warning);
                 return null;
             }
 
-            string englishTitle = anime.Titles?.FirstOrDefault(t => t.Type == "English")?.Title ?? anime.Title;
-            string normalizedTitle = NormalizeTitleKey(englishTitle);
+            // Prefer English title, then TitleEnglish, then Title
+            string displayTitle = anime.Titles?.FirstOrDefault(t => t.Type == "English")?.Title
+                ?? anime.TitleEnglish
+                ?? anime.Title
+                ?? title;
+            string normalizedTitle = NormalizeTitleKey(displayTitle);
             string synopsis = anime.Synopsis ?? "No synopsis available.";
             string posterUrl = anime.Images?.Jpg?.ImageUrl ?? "";
             string pgRating = anime.Rating ?? "N/A";
@@ -58,13 +63,13 @@ namespace ShowStasher.Services
             int fetchMalId = animeId;
             if (season.HasValue && season.Value > 1)
             {
-                fetchMalId = await GetSeasonMalIdAsync(animeId, season.Value);
+                fetchMalId = await GetSeasonMalIdAsync(animeId, season.Value).ConfigureAwait(false);
                 _log($"Resolved Season {season.Value} MAL ID: {fetchMalId}.", AppLogLevel.Info);
             }
 
             _log($"Fetching episodes for Anime ID {fetchMalId}...", AppLogLevel.Info);
 
-            var episodes = await FetchAllEpisodesAsync(fetchMalId);
+            var episodes = await FetchAllEpisodesAsync(fetchMalId, 50).ConfigureAwait(false); // Limit to 50 episodes
             MediaMetadata? requestedEpisodeMetadata = null;
 
             foreach (var ep in episodes)
@@ -74,7 +79,8 @@ namespace ShowStasher.Services
 
                 var metadata = new MediaMetadata
                 {
-                    Title = englishTitle,
+                    LookupKey = NormalizeTitleKey(title),
+                    Title = displayTitle, // Always use best display title
                     Type = "Series",
                     Synopsis = synopsis,
                     PosterUrl = posterUrl,
@@ -85,7 +91,9 @@ namespace ShowStasher.Services
                     EpisodeTitle = ep.Title
                 };
 
-                await _dbService.SaveMetadataAsync(normalizedTitle, metadata);
+                string normalizedKey = NormalizeTitleKey(title);
+                await _dbService.SaveMetadataAsync(normalizedKey, metadata).ConfigureAwait(false);
+
                 _log($"Cached episode {metadata.Episode}: {metadata.EpisodeTitle}.", AppLogLevel.Success);
 
                 if (episode.HasValue && ep.EpisodeId == episode.Value)
@@ -94,7 +102,7 @@ namespace ShowStasher.Services
 
             if (requestedEpisodeMetadata != null)
             {
-                _log($"Found and cached episode {episode.Value} for '{englishTitle}'.", AppLogLevel.Success);
+                _log($"Found and cached episode {episode.Value} for '{displayTitle}'.", AppLogLevel.Success);
                 return requestedEpisodeMetadata;
             }
 
@@ -102,7 +110,8 @@ namespace ShowStasher.Services
 
             var genericMetadata = new MediaMetadata
             {
-                Title = englishTitle,
+                LookupKey = normalizedTitle,
+                Title = displayTitle,
                 Type = "Series",
                 Synopsis = synopsis,
                 PosterUrl = posterUrl,
@@ -112,8 +121,8 @@ namespace ShowStasher.Services
                 Episode = null
             };
 
-            await _dbService.SaveMetadataAsync(normalizedTitle, genericMetadata);
-            _log($"Saved base metadata for anime '{englishTitle}'.", AppLogLevel.Success);
+            await _dbService.SaveMetadataAsync(normalizedTitle, genericMetadata).ConfigureAwait(false);
+            _log($"Saved base metadata for anime '{displayTitle}'.", AppLogLevel.Success);
             return genericMetadata;
         }
 
@@ -155,8 +164,43 @@ namespace ShowStasher.Services
             }
         }
 
+        public async Task<string> GetDisplayTitleAsync(string title, int? year = null, int? season = null, int? episode = null)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
 
-        private async Task<List<JikanEpisode>> FetchAllEpisodesAsync(int malId)
+            try
+            {
+                // First, check cache (season/episode-aware)
+                var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode).ConfigureAwait(false);
+                if (cached != null)
+                    return cached.Title ?? title;
+
+                // Search via Jikan
+                var anime = await SearchAnimeByTitleAsync(title).ConfigureAwait(false);
+                if (anime != null)
+                {
+                    // Pick best display title: English > TitleEnglish > original filename
+                    string displayTitle = anime.Titles?.FirstOrDefault(t => t.Type == "English")?.Title
+                                          ?? anime.TitleEnglish
+                                          ?? anime.Title
+                                          ?? title;
+
+                    return displayTitle;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log?.Invoke($"GetDisplayTitleAsync failed for anime '{title}': {ex.Message}", AppLogLevel.Warning);
+            }
+
+            // Fallback to input title if nothing else
+            return title;
+        }
+
+
+
+        private async Task<List<JikanEpisode>> FetchAllEpisodesAsync(int malId, int maxEpisodes = 50)
         {
             var allEpisodes = new List<JikanEpisode>();
             int currentPage = 1;
@@ -167,7 +211,7 @@ namespace ShowStasher.Services
                 try
                 {
                     string url = $"https://api.jikan.moe/v4/anime/{malId}/episodes?page={currentPage}";
-                    var response = await _httpClient.GetFromJsonAsync<JikanEpisodeListResponse>(url);
+                    var response = await _httpClient.GetFromJsonAsync<JikanEpisodeListResponse>(url).ConfigureAwait(false);
 
                     if (response?.Data != null)
                     {
@@ -184,13 +228,18 @@ namespace ShowStasher.Services
                     break;
                 }
 
-                // Be kind to the API
-                await Task.Delay(300);
+                await Task.Delay(300).ConfigureAwait(false);
+
+                // Stop if we've reached the max episode limit
+                if (allEpisodes.Count >= maxEpisodes)
+                {
+                    hasNextPage = false;
+                }
             }
             while (hasNextPage);
 
             _log($"Total episodes fetched: {allEpisodes.Count}.", AppLogLevel.Success);
-            return allEpisodes;
+            return allEpisodes.Take(maxEpisodes).ToList();
         }
 
         private async Task<int> GetSeasonMalIdAsync(int baseMalId, int season)

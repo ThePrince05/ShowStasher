@@ -1,19 +1,20 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
+using ShowStasher.MVVM.Models;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
-using Newtonsoft.Json.Linq;
-using System.Net.Http;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ShowStasher.MVVM.Models;
-using System.Security.Authentication;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Security.Authentication;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Media;
+using Windows.Media.Protection.PlayReady;
 using static ShowStasher.MVVM.ViewModels.MainViewModel;
-using Microsoft.Extensions.Logging;
 
 namespace ShowStasher.Services
 {
@@ -34,7 +35,8 @@ namespace ShowStasher.Services
 
         public async Task<MediaMetadata?> GetSeriesMetadataAsync(string title, int? season = null, int? episode = null)
         {
-            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", season, episode);
+            // Check cache using named args to avoid parameter-order mistakes
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Series", year: null, season: season, episode: episode);
             if (cached != null)
             {
                 _log($"Series '{title}' S{season}E{episode} found in cache.", AppLogLevel.Success);
@@ -62,6 +64,7 @@ namespace ShowStasher.Services
             _log($"Found series ID {tvId} for '{title}'.", AppLogLevel.Info);
 
             bool seasonFetched = false;
+            string seriesDisplayTitle = title; // fallback
 
             if (season.HasValue && episode.HasValue)
             {
@@ -76,6 +79,7 @@ namespace ShowStasher.Services
                     var seriesJson = await seriesResponse.Content.ReadAsStringAsync();
                     var seriesData = JObject.Parse(seriesJson);
 
+                    seriesDisplayTitle = seriesData["name"]?.ToString() ?? title;
                     string seriesOverview = seriesData["overview"]?.ToString() ?? "";
                     string posterPath = seriesData["poster_path"]?.ToString();
                     string fullPosterUrl = string.IsNullOrWhiteSpace(posterPath) ? "" : "https://image.tmdb.org/t/p/w500" + posterPath;
@@ -122,16 +126,11 @@ namespace ShowStasher.Services
                                 continue;
                             }
 
-                            var episodeCached = await _dbService.GetCachedMetadataAsync(title, "Series", null, season, epNum);
-                            if (episodeCached != null)
-                            {
-                                _log($"Episode S{season}E{epNum} already cached, skipping.", AppLogLevel.Debug);
-                                continue;
-                            }
-
+                            // Ensure we set Title (display title) and OriginalFilename reliably
                             var episodeMeta = new MediaMetadata
                             {
-                                Title = title,
+                                LookupKey = NormalizeTitleKey(title),
+                                Title = seriesDisplayTitle,
                                 Type = "Series",
                                 Synopsis = seriesOverview,
                                 PosterUrl = fullPosterUrl,
@@ -143,9 +142,10 @@ namespace ShowStasher.Services
                                 Rating = seriesRating
                             };
 
-                            string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
+                            // Save under the filename-based normalized key (caller-provided title)
+                            string normalizedKey = NormalizeTitleKey(title);
                             await _dbService.SaveMetadataAsync(normalizedKey, episodeMeta);
-                            _log($"Saved metadata for S{season}E{epNum} - '{epTitle}'.", AppLogLevel.Success);
+                            _log($"Saved metadata (key='{normalizedKey}') for S{season}E{epNum} - '{epTitle}'.", AppLogLevel.Success);
                         }
 
                         seasonFetched = true;
@@ -157,13 +157,15 @@ namespace ShowStasher.Services
                 }
             }
 
-            var final = await _dbService.GetCachedMetadataAsync(title, "Series", null, season, episode);
+            // Try read from cache again (use named args)
+            var final = await _dbService.GetCachedMetadataAsync(title, "Series", year: null, season: season, episode: episode);
             if (final != null)
             {
                 _log($"Metadata for '{title}' S{season}E{episode} retrieved from cache.", AppLogLevel.Success);
                 return final;
             }
 
+            // Fallback: fetch single episode if season-prefetch didn't happen
             if (season.HasValue && episode.HasValue && !seasonFetched)
             {
                 try
@@ -185,6 +187,7 @@ namespace ShowStasher.Services
                         return null;
                     }
 
+                    // Fetch series details for synopsis/poster
                     var seriesUrl = $"https://api.themoviedb.org/3/tv/{tvId}?api_key={_apiKey}";
                     var seriesResponse = await client.GetAsync(seriesUrl);
                     seriesResponse.EnsureSuccessStatusCode();
@@ -208,7 +211,8 @@ namespace ShowStasher.Services
 
                     var episodeMeta = new MediaMetadata
                     {
-                        Title = title,
+                        LookupKey = NormalizeTitleKey(title),
+                        Title = seriesData["name"]?.ToString() ?? title,
                         Type = "Series",
                         Synopsis = seriesOverview,
                         PosterUrl = fullPosterUrl,
@@ -220,9 +224,9 @@ namespace ShowStasher.Services
                         Rating = seriesRating
                     };
 
-                    string normalizedKey = NormalizeTitleKey(episodeMeta.Title);
+                    string normalizedKey = NormalizeTitleKey(title);
                     await _dbService.SaveMetadataAsync(normalizedKey, episodeMeta);
-                    _log($"Fallback episode metadata saved for '{title}' S{season}E{episode}.", AppLogLevel.Success);
+                    _log($"Fallback episode metadata saved for '{title}' S{season}E{episode}. (key='{normalizedKey}')", AppLogLevel.Success);
 
                     return episodeMeta;
                 }
@@ -239,7 +243,7 @@ namespace ShowStasher.Services
 
         public async Task<MediaMetadata?> GetMovieMetadataAsync(string title, int? year = null)
         {
-            var cached = await _dbService.GetCachedMetadataAsync(title, "Movie");
+            var cached = await _dbService.GetCachedMetadataAsync(title, "Movie", year: year, season: null, episode: null);
             if (cached != null)
             {
                 _log($"Cache hit for movie '{title}'", AppLogLevel.Success);
@@ -307,6 +311,7 @@ namespace ShowStasher.Services
 
                 var metadata = new MediaMetadata
                 {
+                    LookupKey = NormalizeTitleKey(title),
                     Title = obj["title"]?.ToString() ?? title,
                     Type = "Movie",
                     Synopsis = obj["overview"]?.ToString() ?? "",
@@ -317,10 +322,10 @@ namespace ShowStasher.Services
                     Rating = rating.HasValue ? (int)Math.Round(rating.Value * 10) : null
                 };
 
-                string normalizedKey = NormalizeTitleKey(metadata.Title);
+                string normalizedKey = NormalizeTitleKey(title);
                 await _dbService.SaveMetadataAsync(normalizedKey, metadata);
 
-                _log($"Movie metadata cached for '{metadata.Title}'", AppLogLevel.Success);
+                _log($"Movie metadata cached for '{metadata.Title}' (key='{normalizedKey}')", AppLogLevel.Success);
 
                 return metadata;
             }
@@ -330,6 +335,53 @@ namespace ShowStasher.Services
                 return null;
             }
         }
+
+        public async Task<string> GetDisplayTitleAsync(string title, string type, int? year)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
+
+            try
+            {
+                using var client = new HttpClient();
+
+                if (type?.Equals("Movie", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    string url = $"https://api.themoviedb.org/3/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
+                    if (year.HasValue)
+                        url += $"&year={year.Value}";
+
+                    var response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    var json = await response.Content.ReadAsStringAsync();
+                    var obj = JObject.Parse(json);
+                    var results = obj["results"] as JArray;
+
+                    return results?.FirstOrDefault()?["title"]?.ToString() ?? title;
+                }
+                else if (type?.Equals("Series", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    string url = $"https://api.themoviedb.org/3/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(title)}";
+                    if (year.HasValue)
+                        url += $"&first_air_date_year={year.Value}";
+
+                    var response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    var json = await response.Content.ReadAsStringAsync();
+                    var obj = JObject.Parse(json);
+                    var results = obj["results"] as JArray;
+
+                    return results?.FirstOrDefault()?["name"]?.ToString() ?? title;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log?.Invoke($"GetDisplayTitleAsync failed for '{title}': {ex.Message}", AppLogLevel.Warning);
+            }
+
+            return title; // fallback
+        }
+
 
 
 
@@ -433,9 +485,13 @@ namespace ShowStasher.Services
 
         private string NormalizeTitleKey(string title)
         {
-            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "") // remove punctuation
-                        .Trim(); // remove surrounding whitespace
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty; // or some default like "unknown"
+
+            return Regex.Replace(title.ToLowerInvariant(), @"[^\w\s]", "")
+                        .Trim();
         }
+
 
         private async Task<string> GetPgRatingAsync(int tmdbId, bool isMovie)
         {
