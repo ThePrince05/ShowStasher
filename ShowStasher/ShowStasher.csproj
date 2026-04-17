@@ -14,18 +14,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Images\top-image.png" />
     <None Remove="Assets\placeholder.png" />
+    <None Remove="Assets\SVG\dark-mode.svg" />
+    <None Remove="Assets\SVG\more.svg" />
+    <None Remove="Assets\SVG\play.svg" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="movies_folder_20806.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\..\..\Videos\Project Videos\C# Projects\WPF\Videos\ShowStasher\movies_folder_20806.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -34,10 +31,15 @@
     <PackageReference Include="MahApps.Metro.IconPacks" Version="5.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Assets\Images\placeholder.png" />
+    <Resource Include="Assets\Images\top-image.png" />
+    <Resource Include="Assets\SVG\dark-mode.svg" />
+    <Resource Include="Assets\SVG\more.svg" />
+    <Resource Include="Assets\SVG\play.svg" />
   </ItemGroup>
 
 </Project>

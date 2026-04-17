@@ -35,8 +35,8 @@ namespace ShowStasher.Helpers
             "1080p", "720p", "480p", "2160p", "4K",
 
             // Source and Release Groups
-            "WEBRip", "WEB-DL", "BluRay", "BRRip", "BDRip", "DVDRip", "HDTV", "CAM", "TS", "TC", "SCREENER",
-            "NF", "AMZN", "HMAX", "DSNP", "HULU", "iT", "ATVP", "PCOK", "STAN", "MUBI", "PLAY", "BONE",
+            "WEBRip", "WEB-DL", "BluRay", "BRRip","BrRip", "BDRip", "DVDRip", "HDTV", "CAM", "TS", "TC", "SCREENER",
+            "NF", "AMZN", "HMAX", "DSNP", "HULU", "iT", "ATVP", "PCOK", "STAN", "MUBI", "PLAY", "BONE", "BLURAY","HEVC-PSA",
 
             // Encoding and Codecs
             "x264", "x265", "HEVC", "AVC", "H.264", "H.265", "10bit", "8bit",
@@ -45,7 +45,7 @@ namespace ShowStasher.Helpers
             "DDP5.1", "DDP5.1", "DD5.1", "AAC","AAC2.0", "TrueHD", "Atmos", "Opus", "DTS-HD", "MA", "FLAC", "MP3", "OGG",
 
             // Miscellaneous
-            "YIFY", "RARBG", "PSA", "GalaxyRG", "Joy", "Subbed", "Dual Audio", "Multi Sub", "Subs", "FanDub", "FanSub", "EngDub", "JapDub", "CMRG","UHD", "IAMABLE", "VXT", "FLUX", "DLWP", "REMASTERED",
+            "YIFY", "RARBG", "PSA", "GalaxyRG", "Joy", "Subbed", "SUBBED", "SUB ","Dubbed", "DUBBED", "DUB", "Dual Audio", "Multi Sub", "Subs", "FanDub", "FanSub", "EngDub", "JapDub", "CMRG","UHD", "IAMABLE", "VXT", "FLUX", "DLWP", "REMASTERED",
 
             // Version and Edition Tags
             "Remux", "REPACK", "PROPER", "LIMITED", "EXTENDED", "UNRATED", "Director's Cut",

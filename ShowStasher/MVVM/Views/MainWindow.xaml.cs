@@ -14,6 +14,8 @@ using MahApps.Metro.IconPacks;
 using Image = System.Windows.Controls.Image;
 using Brushes = System.Windows.Media.Brushes;
 
+
+
 namespace ShowStasher
 {
     /// <summary>
@@ -26,7 +28,33 @@ namespace ShowStasher
             InitializeComponent();
         }
 
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+
+    private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+            WindowState = WindowState.Normal;
+        else
+            WindowState = WindowState.Maximized;
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+    private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
 
         }
@@ -40,38 +68,30 @@ namespace ShowStasher
                 var historyItem = new MenuItem
                 {
                     Header = "Open History",
-                    Icon = new PackIconMaterial
-                    {
-                        Kind = PackIconMaterialKind.History,
-                        Width = 16,
-                        Height = 16,
-                        Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0063B1")),
-                        VerticalAlignment = VerticalAlignment.Center
-                    },
                     Command = vm.OpenHistoryCommand
                 };
 
                 var apiKeyItem = new MenuItem
                 {
                     Header = "Edit API Key",
-                    Icon = new PackIconMaterial
-                    {
-                        Kind = PackIconMaterialKind.Key,
-                        Width = 16,
-                        Height = 16,
-                        Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#0063B1")),
-                        VerticalAlignment = VerticalAlignment.Center
-                    },
                     Command = vm.OpenApiKeyDialogCommand
                 };
-                
+
+                var closeAppItem = new MenuItem
+                {
+                    Header = "Close Application"
+                };
+
+                closeAppItem.Click += (s, args) => this.Close();
 
                 menu.Items.Add(historyItem);
                 menu.Items.Add(apiKeyItem);
+                menu.Items.Add(closeAppItem);
 
                 menu.IsOpen = true;
             }
         }
 
+      
     }
 }

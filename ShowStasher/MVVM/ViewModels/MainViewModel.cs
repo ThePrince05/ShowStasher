@@ -17,8 +17,6 @@ using Application = System.Windows.Application;
 using System.IO;
 using System.Diagnostics;
 
-
-
 namespace ShowStasher.MVVM.ViewModels
 {
     public partial class MainViewModel : ObservableObject
@@ -52,6 +50,11 @@ namespace ShowStasher.MVVM.ViewModels
             });
         }
 
+        private void SetStatusMessage(string message)
+        {
+            StatusMessage = $"Status: {message}";
+        }
+
         [RelayCommand]
         private void CopyAllLogs()
         {
@@ -59,7 +62,7 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 string allLogs = string.Join(Environment.NewLine, LogMessages);
                 Clipboard.SetText(allLogs);
-                StatusMessage = "Copied all logs to clipboard.";
+                SetStatusMessage("Copied all logs to clipboard.");
             }
         }
 
@@ -70,7 +73,7 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 var combined = string.Join(Environment.NewLine, SelectedLogMessages);
                 Clipboard.SetText(combined);
-                StatusMessage = "Copied selected logs to clipboard.";
+                SetStatusMessage("Copied selected logs to clipboard."); // Fixed
             }
         }
 
@@ -82,11 +85,11 @@ namespace ShowStasher.MVVM.ViewModels
             if (LogMessages.Count > 0)
             {
                 LogMessages.Clear();
-                StatusMessage = "Logs cleared.";
+                SetStatusMessage("Logs cleared."); // Fixed
             }
             else
             {
-                StatusMessage = "No logs to clear.";
+                SetStatusMessage("No logs to clear."); // Fixed
             }
         }
 
@@ -117,12 +120,12 @@ namespace ShowStasher.MVVM.ViewModels
         {
             if (string.IsNullOrEmpty(SourcePath) || string.IsNullOrEmpty(DestinationPath))
             {
-                StatusMessage = "Please select both source and destination folders.";
+                SetStatusMessage("Please select both source and destination folders."); // Fixed
                 Log("Missing source or destination path.", AppLogLevel.Error);
                 return;
             }
 
-            StatusMessage = "Preparing preview...";
+            SetStatusMessage("Preparing preview..."); // Fixed
             Log("Generating dry run preview...", AppLogLevel.Action);
             IsBusy = true;
             Progress = 0;
@@ -162,12 +165,12 @@ namespace ShowStasher.MVVM.ViewModels
 
                 if (selectedFilesToOrganize.Count == 0)
                 {
-                    StatusMessage = "Organization canceled.";
+                    SetStatusMessage("Organization canceled."); // Fixed
                     Log("Organization canceled by user (no files selected).", AppLogLevel.Warning);
                     return;
                 }
 
-                StatusMessage = "Organizing selected files...";
+                SetStatusMessage("Organizing selected files..."); // Fixed
                 Log($"Starting organization of {selectedFilesToOrganize.Count} files...", AppLogLevel.Action);
 
                 var progressReporter = new Progress<int>(percent => Progress = percent);
@@ -175,12 +178,12 @@ namespace ShowStasher.MVVM.ViewModels
                 await _fileOrganizerService.OrganizeFilesAsync(
                     selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter);
 
-                StatusMessage = "Done!";
+                SetStatusMessage("Done!"); // Fixed
                 Log("Finished organizing selected files.", AppLogLevel.Success);
             }
             catch (Exception ex)
             {
-                StatusMessage = "Error occurred during organizing.";
+                SetStatusMessage("Error occurred during organizing."); // Fixed
                 Log($"Error during organization: {ex.Message}", AppLogLevel.Error);
             }
             finally
@@ -188,7 +191,6 @@ namespace ShowStasher.MVVM.ViewModels
                 IsBusy = false;
             }
         }
-
 
         [RelayCommand]
         private async Task OpenHistoryAsync()
@@ -213,7 +215,6 @@ namespace ShowStasher.MVVM.ViewModels
             window.Show();
         }
 
-
         private void InitializeServices(string tmdbApiKey)
         {
             var cacheService = new SqliteDbService(Log);
@@ -237,7 +238,6 @@ namespace ShowStasher.MVVM.ViewModels
 
             Log("Services initialized.", AppLogLevel.Info);
         }
-
 
         private async Task<string> EnsureTmdbApiKeyAsync()
         {
@@ -273,7 +273,6 @@ namespace ShowStasher.MVVM.ViewModels
 
             return apiKey;
         }
-
 
         public enum AppLogLevel
         {
@@ -312,8 +311,5 @@ namespace ShowStasher.MVVM.ViewModels
                 Debug.WriteLine($"[Log Skipped] {timestamped}");
             }
         }
-
-
     }
-
 }
