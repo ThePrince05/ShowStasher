@@ -6,32 +6,19 @@
         xmlns:converters="clr-namespace:ShowStasher.Converters"
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
         xmlns:behaviours="clr-namespace:ShowStasher.Helpers"
-        
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
-
         Title="ShowStasher"
         Height="500"
         Width="600"
-
         WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         ResizeMode="CanResize"
-        Background="White"
-        WindowStartupLocation="CenterScreen"
-        UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        WindowStartupLocation="CenterScreen">
 
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
-
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome
-            CaptionHeight="0"
-
-            GlassFrameThickness="0"
-            ResizeBorderThickness="0"
-            UseAeroCaptionButtons="False" />
-    </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
         <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" />
@@ -43,7 +30,6 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Grid Margin="1">
-
                             <Border Background="#ddd"
                                     CornerRadius="5"
                                     BorderThickness="1"
@@ -72,7 +58,6 @@
                                                       Opacity="1" />
                                 </Border.Effect>
                             </Border>
-
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsIndeterminate"
@@ -101,25 +86,21 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="RoundedButton" TargetType="Button">
 
-            <!-- Kill the default border -->
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-
+        <Style x:Key="RoundedButton"
+               TargetType="Button">
+            <Setter Property="BorderThickness"
+                    Value="0" />
+            <Setter Property="BorderBrush"
+                    Value="Transparent" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border 
-                    Background="{TemplateBinding Background}"
-                    CornerRadius="10"
-                    BorderThickness="0">
-                            <!-- ensure no border -->
-
-                            <ContentPresenter 
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
-
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -127,266 +108,248 @@
         </Style>
     </Window.Resources>
 
-
-    <Grid>
-
-        <Border
+    <Border x:Name="RootBorder"
             Background="White"
+            CornerRadius="12"
             BorderBrush="#DDD"
             BorderThickness="1"
-            SnapsToDevicePixels="True">
-
-            <Grid>
-
-                <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <!-- Title Bar -->
-            <RowDefinition Height="*"/>
-            <!-- Main Content -->
-        </Grid.RowDefinitions>
-
-        <!-- Custom Title Bar -->
-        <Border Grid.Row="0"
-                Background="#FCFDFE"
-                BorderBrush="LightGray"
-                BorderThickness="0,0,0,1"
-                MouseDown="TitleBar_MouseDown">
-
-            <Grid>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- App Title -->
-                <StackPanel Orientation="Horizontal"
-                    VerticalAlignment="Center"
-                    Margin="10,0,0,0">
-
-                    <!-- App Icon -->
-                    <Image Source="/Assets/Images/top-image.png"
-                        Width="30"
-                        Height="30"
-                        Margin="0,0,8,0"/>
-
-                    <!-- App Title -->
-                    <TextBlock Text="ShowStasher"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       VerticalAlignment="Center"
-                       Foreground="#FF1E293B"/>
-
-                </StackPanel>
-
-                <!-- Window Buttons -->
-                <StackPanel Grid.Column="1"
-                     Orientation="Horizontal">
-
-
-                    <!-- Dark Mode Toggle -->
-                    <Button Width="40"
-                        Height="40"
-                        Background="Transparent"
-                        BorderThickness="0">
-
-                        <svgc:SvgViewbox Source="/Assets/SVG/dark-mode.svg"
-                         Width="16"
-                         Height="16"/>
-                    </Button>
-
-                    <!-- Ellipsis Menu -->
-                    <Button Width="40"
-                        Height="40"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Click="OptionsButton_Click">
-
-                        <svgc:SvgViewbox Source="/Assets/SVG/more.svg"
-                         Width="16"
-                         Height="16"/>
-                    </Button>
-
-                </StackPanel>
-
-            </Grid>
-
-        </Border>
-
-        <!-- Main Content -->
-        <Grid Grid.Row="1" Margin="20 0 20 20">
-
+            ClipToBounds="True">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="50" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0"
+                    Background="#FCFDFE"
+                    BorderBrush="LightGray"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="12,12,0,0"
+                    MouseDown="TitleBar_MouseDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Source + Destination Side-by-Side -->
-                    <Grid Grid.Row="0" Margin="0,20,0,10">
+                    <!-- App Title -->
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="10,0,0,0">
+                        <!-- App Icon -->
+                        <Image Source="/Assets/Images/top-image.png"
+                               Width="30"
+                               Height="30"
+                               Margin="0,0,8,0" />
 
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                        <!-- App Title -->
+                        <TextBlock Text="ShowStasher"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="#FF1E293B" />
+                    </StackPanel>
 
-                        <!-- LEFT SIDE — SOURCE -->
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <!-- Window Buttons -->
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal">
+                        <!-- Dark Mode Toggle -->
+                        <Button Width="40"
+                                Height="40"
+                                Background="Transparent"
+                                BorderThickness="0">
+                            <svgc:SvgViewbox Source="/Assets/SVG/dark-mode.svg"
+                                             Width="16"
+                                             Height="16" />
+                        </Button>
 
-                            <!-- Source Label -->
-                            <TextBlock
-                                Text="Source Folder"
-                                FontWeight="Bold"
-                                Foreground="#FF334155"/>            
+                        <!-- Maximize / Restore -->
+                        <Button Width="40"
+                                Height="40"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="MaximizeRestore_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/maximize.svg"
+                                             Width="16"
+                                             Height="16" />
+                        </Button>
 
-                            <!-- Source Picker -->
-                            <Grid Margin="0,5,0,0">
+                        <!-- Ellipsis Menu -->
+                        <Button Width="40"
+                                Height="40"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="OptionsButton_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/more.svg"
+                                             Width="16"
+                                             Height="16" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+            <!-- Main Content -->
+            <Grid Grid.Row="1"
+                  Margin="20 0 20 20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                                <TextBox
-                Grid.Column="0"
-                Text="{Binding SourcePath}"
-                IsReadOnly="True"
-                Margin="0,0,10,0"
-                VerticalAlignment="Center"/>
+                <!-- Source + Destination Side-by-Side -->
+                <Grid Grid.Row="0"
+                      Margin="0,20,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                                <Button
-                Grid.Column="1"
-                Content="Browse"
-                Command="{Binding BrowseSourceCommand}"
-                Width="80"/>
+                    <!-- LEFT SIDE — SOURCE -->
+                    <StackPanel Grid.Column="0"
+                                Margin="0,0,10,0">
+                        <!-- Source Label -->
+                        <TextBlock Text="Source Folder"
+                                   FontWeight="Bold"
+                                   Foreground="#FF334155" />
 
-                            </Grid>
-
-                        </StackPanel>
-
-
-                        <!-- RIGHT SIDE — DESTINATION -->
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-
-                            <!-- Destination Label -->
-                            <TextBlock
-                                Text="Destination Folder"
-                                FontWeight="Bold"
-                                Foreground="#FF334155"/>
-
-                            <!-- Destination Picker -->
-                            <Grid Margin="0,5,0,0">
-
+                        <!-- Source Picker -->
+                        <Grid Margin="0,5,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBox
-                            Grid.Column="0"
-                            Text="{Binding DestinationPath}"
-                            IsReadOnly="True"
-                            Margin="0,0,10,0"
-                            VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding SourcePath}"
+                                     IsReadOnly="True"
+                                     Margin="0,0,10,0"
+                                     VerticalAlignment="Center" />
 
-                                <Button
-                            Grid.Column="1"
-                            Content="Browse"
-                            Command="{Binding BrowseDestinationCommand}"
-                            Width="80"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse"
+                                    Command="{Binding BrowseSourceCommand}"
+                                    Width="80" />
+                        </Grid>
+                    </StackPanel>
 
-                            </Grid>
+                    <!-- RIGHT SIDE — DESTINATION -->
+                    <StackPanel Grid.Column="1"
+                                Margin="10,0,0,0">
+                        <!-- Destination Label -->
+                        <TextBlock Text="Destination Folder"
+                                   FontWeight="Bold"
+                                   Foreground="#FF334155" />
 
-                        </StackPanel>
+                        <!-- Destination Picker -->
+                        <Grid Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                    </Grid>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding DestinationPath}"
+                                     IsReadOnly="True"
+                                     Margin="0,0,10,0"
+                                     VerticalAlignment="Center" />
+
+                            <Button Grid.Column="1"
+                                    Content="Browse"
+                                    Command="{Binding BrowseDestinationCommand}"
+                                    Width="80" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
 
                 <Grid Grid.Row="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="11*"/>
-                    <ColumnDefinition Width="129*"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" Grid.ColumnSpan="2">
-                    <Button Command="{Binding PreviewAndOrganizeCommand}"
-                        Width="170"
-                        Height="40"
-                        HorizontalAlignment="Left"
-                        Margin="0,10,50,0"
-                        Background="#FF3B82F6"
-                        Foreground="White"
-                        Style="{StaticResource RoundedButton}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <svgc:SvgViewbox Source="/Assets/SVG/play.svg"
-                                Width="12"
-                                Height="12"
-                                Margin="0,0,8,0"/>
-                                    <TextBlock Text="ORGANIZE FILES"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"/>
-                        </StackPanel>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="11*" />
+                        <ColumnDefinition Width="129*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal"
+                                Grid.ColumnSpan="2">
+                        <Button Command="{Binding PreviewAndOrganizeCommand}"
+                                Width="170"
+                                Height="40"
+                                HorizontalAlignment="Left"
+                                Margin="0,10,50,0"
+                                Background="#FF3B82F6"
+                                Foreground="White"
+                                Style="{StaticResource RoundedButton}">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <svgc:SvgViewbox Source="/Assets/SVG/play.svg"
+                                                 Width="12"
+                                                 Height="12"
+                                                 Margin="0,0,8,0" />
+                                <TextBlock Text="ORGANIZE FILES"
+                                           VerticalAlignment="Center"
+                                           FontWeight="Bold" />
+                            </StackPanel>
                         </Button>
 
-                            <mah:ToggleSwitch Header="Offline Mode"
-                        IsOn="{Binding IsOfflineMode, Mode=TwoWay}"
-                        Margin="10" />
-                </StackPanel>
-            </Grid>
+                        <mah:ToggleSwitch Header="Offline Mode"
+                                          IsOn="{Binding IsOfflineMode, Mode=TwoWay}"
+                                          Margin="10" />
+                    </StackPanel>
+                </Grid>
 
-            <Grid Grid.Row="5">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
+                <Grid Grid.Row="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <!-- Status -->
-                <TextBlock Grid.Row="0"
-                       Text="{Binding StatusMessage}"
-                       Foreground="#059669"
-                       Margin="0,10,0,10" 
-                        FontWeight="Bold"
-                           />
+                    <!-- Status -->
+                    <TextBlock Grid.Row="0"
+                               Text="{Binding StatusMessage}"
+                               Foreground="#059669"
+                               Margin="0,10,0,10"
+                               FontWeight="Bold" />
 
-                <!-- Progress Bar -->
-                <ProgressBar Grid.Row="1"
-                         Style="{StaticResource GlowingProgressBar}"
-                         Margin="0,2,0,10"
-                         Height="20"
-                         Minimum="0"
-                         Maximum="100"
-                         Value="{Binding Progress}"
-                         Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
-            </Grid>
+                    <!-- Progress Bar -->
+                    <ProgressBar Grid.Row="1"
+                                 Style="{StaticResource GlowingProgressBar}"
+                                 Margin="0,2,0,10"
+                                 Height="20"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Value="{Binding Progress}"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </Grid>
 
-            <!-- Logs -->
+                <!-- Logs -->
+                <StackPanel Grid.Row="6"
+                            Margin="0,10,0,0">
+                    <!-- Custom Log Output Title -->
+                    <TextBlock Text="Log Output"
+                               FontWeight="Bold"
+                               FontSize="14"
+                               Foreground="#64748B"
+                               Margin="0 0 0 5" />
 
-            <StackPanel Grid.Row="6" Margin="0,10,0,0">
-
-                <!-- Custom Log Output Title -->
-                <TextBlock Text="Log Output"
-                    FontWeight="Bold"
-                    FontSize="14"
-                    Foreground="#64748B"
-                    Margin="0 0 0 5"/>
-
-                <!-- Logs Area -->
-                    <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="4">
+                    <!-- Logs Area -->
+                    <Border BorderBrush="#DDD"
+                            BorderThickness="1"
+                            CornerRadius="4">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ListBox ItemsSource="{Binding LogMessages}"
-                                SelectedItem="{Binding SelectedLogMessage, Mode=TwoWay}"
-                                behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
-                                FontFamily="Consolas"
-                                FontSize="12"
-                                SelectionMode="Extended"
-                                Padding="5">
-
+                                     SelectedItem="{Binding SelectedLogMessage, Mode=TwoWay}"
+                                     behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
+                                     FontFamily="Consolas"
+                                     FontSize="12"
+                                     SelectionMode="Extended"
+                                     Padding="5">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding}"
+                                                   TextWrapping="Wrap" />
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
 
@@ -394,26 +357,18 @@
                                 <ListBox.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Copy Selected Log"
-                            Command="{Binding CopySelectedLogCommand}" />
+                                                  Command="{Binding CopySelectedLogCommand}" />
                                         <MenuItem Header="Copy All Logs"
-                            Command="{Binding CopyAllLogsCommand}" />
+                                                  Command="{Binding CopyAllLogsCommand}" />
                                         <MenuItem Header="Clear Logs"
-                            Command="{Binding ClearLogsCommand}" />
+                                                  Command="{Binding ClearLogsCommand}" />
                                     </ContextMenu>
                                 </ListBox.ContextMenu>
-
                             </ListBox>
                         </ScrollViewer>
                     </Border>
-
-                    </StackPanel>
-                </Grid>
-                <!-- Inner Grid -->
+                </StackPanel>
             </Grid>
-        </Border>
-        <!-- Rounded Border -->
-    </Grid>
-    <!-- Root Grid -->
-
-
+        </Grid>
+    </Border>
 </Window>

@@ -26,15 +26,29 @@ namespace ShowStasher
         public MainWindow()
         {
             InitializeComponent();
+
+            this.StateChanged += MainWindow_StateChanged;
         }
 
 
-    private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        private void MainWindow_StateChanged(object sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                BorderThickness = new Thickness(8);
+            }
+            else
+            {
+                BorderThickness = new Thickness(0);
+            }
+        }
+        private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 DragMove();
             }
+           
         }
 
     private void Minimize_Click(object sender, RoutedEventArgs e)
@@ -50,7 +64,16 @@ namespace ShowStasher
             WindowState = WindowState.Maximized;
     }
 
-    private void Close_Click(object sender, RoutedEventArgs e)
+        private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+
+
+        private void Close_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
