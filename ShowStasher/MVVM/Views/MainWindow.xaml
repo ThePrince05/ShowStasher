@@ -23,6 +23,101 @@
     <Window.Resources>
         <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+
+                            <Track x:Name="PART_Track"
+                   IsDirectionReversed="True">
+
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton
+                        Command="ScrollBar.PageUpCommand"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border
+                                    Margin="2"
+                                    CornerRadius="3"
+                                    Background="#4B5563"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton
+                        Command="ScrollBar.PageDownCommand"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+
+                            </Track>
+
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Track"
+                        Property="Opacity"
+                        Value="1"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ThinScrollViewer"
+       TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Content -->
+                            <ScrollContentPresenter
+                        Grid.Column="0"
+                        CanContentScroll="{TemplateBinding CanContentScroll}" />
+
+                            <!-- Vertical ScrollBar -->
+                            <ScrollBar
+                        x:Name="PART_VerticalScrollBar"
+                        Grid.Column="1"
+                        Orientation="Vertical"
+                        Width="8"
+                        Style="{StaticResource ThinScrollBar}"
+                        Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                        Maximum="{TemplateBinding ScrollableHeight}"
+                        ViewportSize="{TemplateBinding ViewportHeight}"
+                        Value="{Binding VerticalOffset, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
         <Style x:Key="CapsuleToggleSwitch" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -530,6 +625,13 @@
                             SelectionMode="Extended"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.Resources>
+                              <Style TargetType="ScrollBar"
+                               BasedOn="{StaticResource ThinScrollBar}" />
+
+                              <Style TargetType="ScrollViewer"
+                               BasedOn="{StaticResource ThinScrollViewer}" />
+                            </ListBox.Resources>
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="Padding" Value="4"/>
