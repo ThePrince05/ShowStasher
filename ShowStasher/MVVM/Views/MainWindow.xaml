@@ -23,7 +23,83 @@
     <Window.Resources>
         <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style x:Key="CapsuleToggleSwitch" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
 
+                        <StackPanel Orientation="Horizontal">
+                            <Grid x:Name="TrackGrid" Width="42" Height="22" VerticalAlignment="Center">
+                                <Border x:Name="TrackBorder"
+                                Background="#CBD5E1"
+                                CornerRadius="11"
+                                SnapsToDevicePixels="True"/>
+                                <Border x:Name="Thumb"
+                                Width="16"
+                                Height="16"
+                                Background="White"
+                                CornerRadius="8"
+                                HorizontalAlignment="Left"
+                                Margin="3,0,0,0"
+                                SnapsToDevicePixels="True">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform X="0"/>
+                                    </Border.RenderTransform>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.1" Color="Black"/>
+                                    </Border.Effect>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock x:Name="StatusText"
+                               Text="Off"
+                               FontFamily="Inter"
+                               FontSize="12"
+                               Foreground="#1E293B"
+                               FontWeight="Medium"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TrackBorder" Property="Background" Value="#94A3B8"/>
+                                <Setter TargetName="StatusText" Property="Text" Value="On"/>
+
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Thumb"
+                                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)"
+                                                     To="20" 
+                                                     Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Thumb"
+                                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)"
+                                                     To="0" 
+                                                     Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="GlowingProgressBar"
                TargetType="ProgressBar">
             <Setter Property="Template">
@@ -118,11 +194,11 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="50" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="35" />
             </Grid.RowDefinitions>
 
-            <!-- Custom Title Bar -->
             <Border Grid.Row="0"
-                    Background="#FCFDFE"
+                    Background="#FBFCFD"
                     BorderBrush="LightGray"
                     BorderThickness="0,0,0,1"
                     CornerRadius="12,12,0,0"
@@ -133,28 +209,24 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- App Title -->
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center"
                                 Margin="10,0,0,0">
-                        <!-- App Icon -->
                         <Image Source="/Assets/Images/top-image.png"
                                Width="30"
                                Height="30"
                                Margin="0,0,8,0" />
 
-                        <!-- App Title -->
                         <TextBlock Text="ShowStasher"
                                    FontSize="18"
-                                   FontWeight="Bold"
+                                   FontFamily="Inter"
+                                   FontWeight="ExtraBold"
                                    VerticalAlignment="Center"
-                                   Foreground="#FF1E293B" />
+                                   Foreground="#1E293B" />
                     </StackPanel>
 
-                    <!-- Window Buttons -->
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal">
-                        <!-- Dark Mode Toggle -->
                         <Button Width="40"
                                 Height="40"
                                 Background="Transparent"
@@ -163,8 +235,15 @@
                                              Width="16"
                                              Height="16" />
                         </Button>
-
-                        <!-- Maximize / Restore -->
+                        <Button Width="40"
+                                Height="40"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="Minimize_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/minimize.svg"
+                                             Width="16"
+                                             Height="16" />
+                        </Button>
                         <Button Width="40"
                                 Height="40"
                                 Background="Transparent"
@@ -175,7 +254,6 @@
                                              Height="16" />
                         </Button>
 
-                        <!-- Ellipsis Menu -->
                         <Button Width="40"
                                 Height="40"
                                 Background="Transparent"
@@ -189,7 +267,6 @@
                 </Grid>
             </Border>
 
-            <!-- Main Content -->
             <Grid Grid.Row="1"
                   Margin="20 0 20 20">
                 <Grid.RowDefinitions>
@@ -202,102 +279,180 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Source + Destination Side-by-Side -->
                 <Grid Grid.Row="0"
-                      Margin="0,20,0,10">
+      Margin="0,20,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT SIDE — SOURCE -->
                     <StackPanel Grid.Column="0"
-                                Margin="0,0,10,0">
-                        <!-- Source Label -->
+                Margin="0,0,10,0">
                         <TextBlock Text="Source Folder"
-                                   FontWeight="Bold"
-                                   Foreground="#FF334155" />
+                   FontFamily="Inter"
+                   FontWeight="Bold"
+                   Foreground="#FF334155"
+                   Margin="5,0,0,0" />
 
-                        <!-- Source Picker -->
-                        <Grid Margin="0,5,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <Border Margin="0,8,0,0"
+                Background="#F8FAFC"
+                BorderBrush="#E2E8F0"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,4,8,4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding SourcePath}"
-                                     IsReadOnly="True"
-                                     Margin="0,0,10,0"
-                                     VerticalAlignment="Center" />
+                                <TextBox Grid.Column="0"
+                         Text="{Binding SourcePath}"
+                         FontFamily="Inter"
+                         FontSize="14"
+                         Foreground="#1E293B"
+                         IsReadOnly="True"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VerticalAlignment="Center"
+                         VerticalContentAlignment="Center" />
 
-                            <Button Grid.Column="1"
-                                    Content="Browse"
-                                    Command="{Binding BrowseSourceCommand}"
-                                    Width="80" />
-                        </Grid>
+                                <Button Grid.Column="1"
+                        Content="BROWSE"
+                        Command="{Binding BrowseSourceCommand}"
+                        Width="90"
+                        Height="36"
+                        FontFamily="Inter"
+                        FontWeight="Bold"
+                        FontSize="12"
+                        Foreground="#475569"
+                        Margin="10,0,0,0" Click="Button_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="White"
+                                    BorderBrush="#E2E8F0"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
 
-                    <!-- RIGHT SIDE — DESTINATION -->
                     <StackPanel Grid.Column="1"
-                                Margin="10,0,0,0">
-                        <!-- Destination Label -->
+                Margin="10,0,0,0">
                         <TextBlock Text="Destination Folder"
-                                   FontWeight="Bold"
-                                   Foreground="#FF334155" />
+                   FontFamily="Inter"
+                   FontWeight="Bold"
+                   Foreground="#FF334155"
+                   Margin="5,0,0,0" />
 
-                        <!-- Destination Picker -->
-                        <Grid Margin="0,5,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <Border Margin="0,8,0,0"
+                Background="#F8FAFC"
+                BorderBrush="#E2E8F0"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,4,8,4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding DestinationPath}"
-                                     IsReadOnly="True"
-                                     Margin="0,0,10,0"
-                                     VerticalAlignment="Center" />
+                                <TextBox Grid.Column="0"
+                         Text="{Binding DestinationPath}"
+                         FontFamily="Inter"
+                         FontSize="14"
+                         Foreground="#1E293B"
+                         IsReadOnly="True"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VerticalAlignment="Center"
+                         VerticalContentAlignment="Center" />
 
-                            <Button Grid.Column="1"
-                                    Content="Browse"
-                                    Command="{Binding BrowseDestinationCommand}"
-                                    Width="80" />
-                        </Grid>
+                                <Button Grid.Column="1"
+                        Content="BROWSE"
+                        Command="{Binding BrowseDestinationCommand}"
+                        Width="90"
+                        Height="36"
+                        FontFamily="Inter"
+                        FontWeight="Bold"
+                        FontSize="12"
+                        Foreground="#475569"
+                        Margin="10,0,0,0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="White"
+                                    BorderBrush="#E2E8F0"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Grid>
 
-                <Grid Grid.Row="4">
+                <Grid Grid.Row="4"
+                      Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="11*" />
-                        <ColumnDefinition Width="129*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal"
-                                Grid.ColumnSpan="2">
-                        <Button Command="{Binding PreviewAndOrganizeCommand}"
-                                Width="170"
-                                Height="40"
-                                HorizontalAlignment="Left"
-                                Margin="0,10,50,0"
-                                Background="#FF3B82F6"
-                                Foreground="White"
-                                Style="{StaticResource RoundedButton}">
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <svgc:SvgViewbox Source="/Assets/SVG/play.svg"
-                                                 Width="12"
-                                                 Height="12"
-                                                 Margin="0,0,8,0" />
-                                <TextBlock Text="ORGANIZE FILES"
-                                           VerticalAlignment="Center"
-                                           FontWeight="Bold" />
-                            </StackPanel>
-                        </Button>
 
-                        <mah:ToggleSwitch Header="Offline Mode"
-                                          IsOn="{Binding IsOfflineMode, Mode=TwoWay}"
-                                          Margin="10" />
-                    </StackPanel>
+                    <Button Grid.Column="0"
+                            Command="{Binding PreviewAndOrganizeCommand}"
+                            Width="190"
+                            Height="45"
+                            HorizontalAlignment="Left"
+                            Background="#FF3B82F6"
+                            Foreground="White"
+                            Style="{StaticResource RoundedButton}">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <svgc:SvgViewbox Source="/Assets/SVG/play.svg"
+                                             Width="14"
+                                             Height="14"
+                                             Margin="0,0,8,0" />
+                            <TextBlock Text="ORGANIZE FILES"
+                                       FontFamily="Inter"
+                                       VerticalAlignment="Center"
+                                       FontSize="14"
+                                       FontWeight="Bold" />
+                        </StackPanel>
+                    </Button>
+
+                    <Border Grid.Column="1"
+                        Background="#F8FAFC"
+                        BorderBrush="#F1F5F9"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16,10,14,10"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Offline Mode"
+                            FontFamily="Inter"
+                            Foreground="#334155"
+                            FontWeight="Bold"
+                            FontSize="12"
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0" />
+
+                    <ToggleButton IsChecked="{Binding IsOfflineMode, Mode=TwoWay}"
+                        Style="{StaticResource CapsuleToggleSwitch}"
+                        Foreground="#64748B"
+                        VerticalAlignment="Center" Checked="ToggleButton_Checked"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <Grid Grid.Row="5">
@@ -306,14 +461,13 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Status -->
                     <TextBlock Grid.Row="0"
                                Text="{Binding StatusMessage}"
+                               FontFamily="Inter"
                                Foreground="#059669"
                                Margin="0,10,0,10"
                                FontWeight="Bold" />
 
-                    <!-- Progress Bar -->
                     <ProgressBar Grid.Row="1"
                                  Style="{StaticResource GlowingProgressBar}"
                                  Margin="0,2,0,10"
@@ -324,51 +478,152 @@
                                  Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </Grid>
 
-                <!-- Logs -->
-                <StackPanel Grid.Row="6"
-                            Margin="0,10,0,0">
-                    <!-- Custom Log Output Title -->
-                    <TextBlock Text="Log Output"
-                               FontWeight="Bold"
-                               FontSize="14"
-                               Foreground="#64748B"
-                               Margin="0 0 0 5" />
+                <Grid Grid.Row="6"
+                      Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <!-- Logs Area -->
-                    <Border BorderBrush="#DDD"
-                            BorderThickness="1"
-                            CornerRadius="4">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ListBox ItemsSource="{Binding LogMessages}"
-                                     SelectedItem="{Binding SelectedLogMessage, Mode=TwoWay}"
-                                     behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     SelectionMode="Extended"
-                                     Padding="5">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   TextWrapping="Wrap" />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
+                    <DockPanel Grid.Row="0"
+                               Margin="0,0,0,5">
+                        <TextBlock Text="LOG OUTPUT"
+                                   FontFamily="Inter"
+                                   FontWeight="Bold"
+                                   FontSize="12"
+                                   Foreground="#64748B"
+                                   DockPanel.Dock="Left"
+                                   VerticalAlignment="Center" />
 
-                                <!-- Context Menu -->
-                                <ListBox.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Copy Selected Log"
-                                                  Command="{Binding CopySelectedLogCommand}" />
-                                        <MenuItem Header="Copy All Logs"
-                                                  Command="{Binding CopyAllLogsCommand}" />
-                                        <MenuItem Header="Clear Logs"
-                                                  Command="{Binding ClearLogsCommand}" />
-                                    </ContextMenu>
-                                </ListBox.ContextMenu>
-                            </ListBox>
-                        </ScrollViewer>
+                        <TextBlock Text="Clear Logs"
+                                   Foreground="#94A3B8"
+                                   FontFamily="Inter"
+                                   FontWeight="SemiBold"
+                                   FontSize="12"
+                                   Cursor="Hand"
+                                   DockPanel.Dock="Right"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center">
+                            <TextBlock.InputBindings>
+                                <MouseBinding MouseAction="LeftClick"
+                                              Command="{Binding ClearLogsCommand}" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                    </DockPanel>
+
+                    <Border Grid.Row="1"
+                             Background="#070D1E"
+                             BorderBrush="#1E293B"
+                             BorderThickness="1"
+                             CornerRadius="18"
+                             Padding="12">
+                        <ListBox
+                            ItemsSource="{Binding LogMessages}"
+                            SelectedItem="{Binding SelectedLogMessage}"
+                            behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontFamily="Consolas"
+                            FontSize="15"
+                            Foreground="#CBD5E1"
+                            Padding="0"
+                            SelectionMode="Extended"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="4"/>
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border
+                        x:Name="Border"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="6"
+                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter/>
+                                                </Border>
+
+                                                <ControlTemplate.Triggers>
+
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Border"
+                                    Property="Background"
+                                    Value="#13233D"/>
+                                                    </Trigger>
+
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Border"
+                                    Property="Background"
+                                    Value="#0F1A30"/>
+                                                    </Trigger>
+
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Text="{Binding}"
+                                        FontFamily="Consolas"
+                                        FontSize="15"
+                                        Foreground="#D1D5DB"
+                                        TextWrapping="Wrap"
+                                        Margin="4,2"/>      
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Copy Selected Log"
+                                              Command="{Binding CopySelectedLogCommand}" />
+                                    <MenuItem Header="Copy All Logs"
+                                              Command="{Binding CopyAllLogsCommand}" />
+                                    <MenuItem Header="Clear Logs"
+                                              Command="{Binding ClearLogsCommand}" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
                     </Border>
-                </StackPanel>
+                </Grid>
             </Grid>
+            <Border Grid.Row="2" 
+                    Background="#F8FAFC" 
+                    BorderBrush="#F1F5F9" 
+                    CornerRadius="0,0,15,15"
+                    BorderThickness="0,1,0,0">
+
+                <Grid Margin="20,0">
+
+                    <TextBlock Text="V1.0.0 STABLE"
+                               FontFamily="Inter"
+                               FontWeight="Bold"
+                               FontSize="10"
+                               Foreground="#94A3B8"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left" />
+
+
+
+                    <TextBlock Text="© SHOWSTASHER UTILITIES"
+                               FontFamily="Inter"
+                               FontWeight="Bold"
+                               FontSize="10"
+                               Foreground="#94A3B8"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right" />
+
+                </Grid>
+
+            </Border>
         </Grid>
     </Border>
 </Window>

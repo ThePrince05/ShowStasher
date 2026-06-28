@@ -50,7 +50,7 @@ namespace ShowStasher
             }
            
         }
-
+    
     private void Minimize_Click(object sender, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
@@ -115,6 +115,19 @@ namespace ShowStasher
             }
         }
 
-      
+        private void TextBox_TextChanged_1()
+        {
+
+        }
+
+        private void ToggleButton_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

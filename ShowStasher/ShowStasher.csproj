@@ -18,6 +18,7 @@
     <None Remove="Assets\placeholder.png" />
     <None Remove="Assets\SVG\dark-mode.svg" />
     <None Remove="Assets\SVG\maximize.svg" />
+    <None Remove="Assets\SVG\minimize.svg" />
     <None Remove="Assets\SVG\more.svg" />
     <None Remove="Assets\SVG\play.svg" />
   </ItemGroup>
@@ -40,6 +41,7 @@
     <Resource Include="Assets\Images\top-image.png" />
     <Resource Include="Assets\SVG\dark-mode.svg" />
     <Resource Include="Assets\SVG\maximize.svg" />
+    <Resource Include="Assets\SVG\minimize.svg" />
     <Resource Include="Assets\SVG\more.svg" />
     <Resource Include="Assets\SVG\play.svg" />
   </ItemGroup>
