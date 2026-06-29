@@ -117,7 +117,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+
         <Style x:Key="CapsuleToggleSwitch" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -195,68 +195,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="GlowingProgressBar"
-               TargetType="ProgressBar">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ProgressBar">
-                        <Grid Margin="1">
-                            <Border Background="#ddd"
-                                    CornerRadius="5"
-                                    BorderThickness="1"
-                                    BorderBrush="Gray" />
-
-                            <Border x:Name="PART_GlowBar"
-                                    Background="DodgerBlue"
-                                    CornerRadius="5,0,0,5"
-                                    HorizontalAlignment="Left"
-                                    Height="{TemplateBinding Height}">
-                                <Border.Width>
-                                    <MultiBinding Converter="{StaticResource ProgressToWidthConverter}">
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
-                                                 Path="Value" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
-                                                 Path="Maximum" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}"
-                                                 Path="ActualWidth" />
-                                    </MultiBinding>
-                                </Border.Width>
-                                <Border.Effect>
-                                    <DropShadowEffect x:Name="GlowEffect"
-                                                      Color="DodgerBlue"
-                                                      BlurRadius="10"
-                                                      ShadowDepth="0"
-                                                      Opacity="1" />
-                                </Border.Effect>
-                            </Border>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsIndeterminate"
-                                     Value="False">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard RepeatBehavior="Forever"
-                                                    AutoReverse="True">
-                                            <DoubleAnimation Storyboard.TargetName="GlowEffect"
-                                                             Storyboard.TargetProperty="BlurRadius"
-                                                             From="10"
-                                                             To="30"
-                                                             Duration="0:0:8" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                            </Trigger>
-                            <Trigger Property="IsIndeterminate"
-                                     Value="True">
-                                <Setter TargetName="PART_GlowBar"
-                                        Property="Background"
-                                        Value="LightGray" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <Style x:Key="RoundedButton"
                TargetType="Button">
@@ -273,6 +211,50 @@
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernProgressBar"
+       TargetType="ProgressBar">
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Background" Value="#E2E8F0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+
+                            <!-- Track -->
+                            <Border Background="{TemplateBinding Background}"
+                            CornerRadius="6"/>
+
+                            <!-- Fill -->
+                            <Border Background="#3B82F6"
+                            CornerRadius="6"
+                            HorizontalAlignment="Left">
+                                <Border.Width>
+                                    <MultiBinding Converter="{StaticResource ProgressToWidthConverter}">
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Value"/>
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Maximum"/>
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ActualWidth"/>
+                                    </MultiBinding>
+                                </Border.Width>
+                            </Border>
+
+                            <!-- Percentage -->
+                            <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="Inter"
+                        FontWeight="Bold"
+                        FontSize="12"
+                        Foreground="#1E293B"
+                        Text="{Binding Value,
+                                       RelativeSource={RelativeSource TemplatedParent},
+                                       StringFormat={}{0:0}%}" />
+
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -563,14 +545,13 @@
                                Margin="0,10,0,10"
                                FontWeight="Bold" />
 
-                    <ProgressBar Grid.Row="1"
-                                 Style="{StaticResource GlowingProgressBar}"
-                                 Margin="0,2,0,10"
-                                 Height="20"
-                                 Minimum="0"
-                                 Maximum="100"
-                                 Value="{Binding Progress}"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <ProgressBar
+                        Height="20"
+                        Style="{StaticResource ModernProgressBar}"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="{Binding Progress}"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </Grid>
 
                 <Grid Grid.Row="6"
@@ -593,7 +574,7 @@
                         <TextBlock Text="Clear Logs"
                                    Foreground="#94A3B8"
                                    FontFamily="Inter"
-                                   FontWeight="SemiBold"
+                                   FontWeight="Bold"
                                    FontSize="12"
                                    Cursor="Hand"
                                    DockPanel.Dock="Right"
@@ -619,12 +600,12 @@
                             Background="Transparent"
                             BorderThickness="0"
                             FontFamily="Consolas"
-                            FontSize="15"
+                            FontSize="14"
                             Foreground="#CBD5E1"
                             Padding="0"
                             SelectionMode="Extended"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ListBox_SelectionChanged">
                             <ListBox.Resources>
                               <Style TargetType="ScrollBar"
                                BasedOn="{StaticResource ThinScrollBar}" />
@@ -676,7 +657,7 @@
                                     <TextBlock
                                         Text="{Binding}"
                                         FontFamily="Consolas"
-                                        FontSize="15"
+                                        FontSize="14"
                                         Foreground="#D1D5DB"
                                         TextWrapping="Wrap"
                                         Margin="4,2"/>      
