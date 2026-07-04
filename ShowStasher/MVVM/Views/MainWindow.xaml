@@ -320,6 +320,7 @@
                             <svgc:SvgViewbox Source="/Assets/SVG/minimize.svg"
                                              Width="16"
                                              Height="16" />
+                            
                         </Button>
                         <Button Width="40"
                                 Height="40"
@@ -654,13 +655,34 @@
                             </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock
-                                        Text="{Binding}"
-                                        FontFamily="Consolas"
-                                        FontSize="14"
-                                        Foreground="#D1D5DB"
-                                        TextWrapping="Wrap"
-                                        Margin="4,2"/>      
+                                    <TextBlock FontFamily="Consolas"
+                                       FontSize="14"
+                                       TextWrapping="Wrap">
+
+                                        <!-- Timestamp -->
+                                        <Run Text="{Binding Timestamp}"
+                                             Foreground="#6B7280"/>
+
+                                        <Run Text=" "/>
+
+                                        <!-- Icon -->
+                                        <Run Text="{Binding Icon}"
+                                             Foreground="{Binding LevelColor}"/>
+
+                                        <Run Text=" "/>
+
+                                        <!-- Level -->
+                                        <Run Text="{Binding Level}"
+                                             Foreground="{Binding LevelColor}"
+                                             FontWeight="Bold"/>
+
+                                        <Run Text="  "/>
+
+                                        <!-- Message -->
+                                        <Run Text="{Binding Message}"
+                                             Foreground="#D1D5DB"/>
+
+                                    </TextBlock>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
 

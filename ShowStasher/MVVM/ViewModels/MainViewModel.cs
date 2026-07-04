@@ -16,6 +16,10 @@ using Clipboard = System.Windows.Clipboard;
 using Application = System.Windows.Application;
 using System.IO;
 using System.Diagnostics;
+using System.Windows.Media;
+using Color = System.Windows.Media.Color;
+using ColorConverter = System.Windows.Media.ColorConverter;
+
 
 namespace ShowStasher.MVVM.ViewModels
 {
@@ -27,13 +31,16 @@ namespace ShowStasher.MVVM.ViewModels
         [ObservableProperty] private string sourcePath;
         [ObservableProperty] private string destinationPath;
         [ObservableProperty] private string statusMessage;
-        [ObservableProperty] private string? selectedLogMessage;
+        [ObservableProperty]
+        private LogEntry? selectedLogMessage;
+
         [ObservableProperty] private bool isOfflineMode;
         [ObservableProperty] private int progress;
         [ObservableProperty] private bool isBusy;
 
-        public ObservableCollection<string> LogMessages { get; } = new();
-        public ObservableCollection<string> SelectedLogMessages { get; } = new();
+        public ObservableCollection<LogEntry> LogMessages { get; } = new();
+        public ObservableCollection<LogEntry> SelectedLogMessages { get; } = new();
+
 
         public MainViewModel()
         {
@@ -50,6 +57,15 @@ namespace ShowStasher.MVVM.ViewModels
             });
         }
 
+        public class LogEntry
+        {
+            public string Timestamp { get; set; }
+            public string Level { get; set; }
+            public string Message { get; set; }
+
+            public string LevelColor { get; set; }   // <-- string instead of Brush
+            public string Icon { get; set; }
+        }
         private void SetStatusMessage(string message)
         {
             StatusMessage = $"Status: {message}";
@@ -60,7 +76,11 @@ namespace ShowStasher.MVVM.ViewModels
         {
             if (LogMessages.Count > 0)
             {
-                string allLogs = string.Join(Environment.NewLine, LogMessages);
+                string allLogs = string.Join(
+                    Environment.NewLine,
+                    LogMessages.Select(x =>
+                        $"{x.Timestamp} {x.Icon} {x.Level} {x.Message}")
+                );
                 Clipboard.SetText(allLogs);
                 SetStatusMessage("Copied all logs to clipboard.");
             }
@@ -71,7 +91,11 @@ namespace ShowStasher.MVVM.ViewModels
         {
             if (SelectedLogMessages.Any())
             {
-                var combined = string.Join(Environment.NewLine, SelectedLogMessages);
+                var combined = string.Join(
+                Environment.NewLine,
+                SelectedLogMessages.Select(x =>
+                    $"{x.Timestamp} {x.Icon} {x.Level} {x.Message}")
+            );
                 Clipboard.SetText(combined);
                 SetStatusMessage("Copied selected logs to clipboard."); // Fixed
             }
@@ -286,30 +310,62 @@ namespace ShowStasher.MVVM.ViewModels
 
         private void Log(string message, AppLogLevel level = AppLogLevel.Info)
         {
-            string prefix = level switch
+            string color;
+            string icon;
+            string levelText;
+
+            switch (level)
             {
-                AppLogLevel.Info => "ℹ️",
-                AppLogLevel.Success => "✅",
-                AppLogLevel.Warning => "⚠️",
-                AppLogLevel.Error => "❌",
-                AppLogLevel.Debug => "[DEBUG]",
-                AppLogLevel.Action => "🔄",
-                _ => ""
+                case AppLogLevel.Success:
+                    color = "#34D399";
+                    icon = "✔";
+                    levelText = "SUCCESS";
+                    break;
+
+                case AppLogLevel.Error:
+                    color = "#F87171";
+                    icon = "✖";
+                    levelText = "ERROR";
+                    break;
+
+                case AppLogLevel.Warning:
+                    color = "#FBBF24";
+                    icon = "⚠";
+                    levelText = "WARN";
+                    break;
+
+                case AppLogLevel.Debug:
+                    color = "#F59E0B";
+                    icon = "🐞";
+                    levelText = "DEBUG";
+                    break;
+
+                case AppLogLevel.Action:
+                    color = "#60A5FA";
+                    icon = "🚀";
+                    levelText = "ACTION";
+                    break;
+
+                default:
+                    color = "#94A3B8";
+                    icon = "ℹ";
+                    levelText = "INFO";
+                    break;
+            }
+
+            var log = new LogEntry
+            {
+                Timestamp = $"[{DateTime.Now:HH:mm:ss}]",
+                Level = levelText,
+                Message = message,
+                LevelColor = color,
+                Icon = icon
             };
 
-            var timestamped = $"[{DateTime.Now:T}] {prefix} {message}";
-
-            if (Application.Current?.Dispatcher?.HasShutdownStarted == false)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    LogMessages.Add(timestamped);
-                });
-            }
-            else
-            {
-                Debug.WriteLine($"[Log Skipped] {timestamped}");
-            }
+                LogMessages.Add(log);
+            });
         }
     }
 }

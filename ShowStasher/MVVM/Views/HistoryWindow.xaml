@@ -1,100 +1,260 @@
-﻿<controls:MetroWindow x:Class="ShowStasher.MVVM.Views.HistoryWindow"
-                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                      xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
-                      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                      Title="Move History"
-                      Height="500"
-                      Width="900"
-                      mc:Ignorable="d"
-                      WindowStartupLocation="CenterScreen"
-                      ResizeMode="CanResize">
-   
+﻿<Window x:Class="ShowStasher.MVVM.Views.HistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+        Title="Move History"
+        Height="500"
+        Width="900"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
 
-        <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- Reusable ScrollBar and ScrollViewer Styles from Main to keep DataGrid uniform -->
+        <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Background="Transparent" BorderThickness="0" IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Margin="2" CornerRadius="3" Background="#4B5563"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Background="Transparent" BorderThickness="0" IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Track" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <TextBox Grid.Row="0"
-                 Margin="0,0,0,10"
-                 Height="30"
-                 controls:TextBoxHelper.Watermark="Search by filename..."
-                 controls:TextBoxHelper.ClearTextButton="True"
-                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+        <!-- Rounded Button Template Matching Main App buttons -->
+        <Style x:Key="RoundedButton" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding CollectionView}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  CanUserAddRows="False"
-                  HeadersVisibility="Column"
-                  GridLinesVisibility="Horizontal"
-                  RowHeaderWidth="0"
-                  SelectionMode="Single"
-                  Margin="0,0,0,10">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Original File"
-                                    Binding="{Binding OriginalFileName}"
-                                    Width="*" />
-                <DataGridTextColumn Header="New File"
-                                    Binding="{Binding NewFileName}"
-                                    Width="*" />
-                <DataGridTextColumn Header="Source Path"
-                                    Binding="{Binding SourcePath}"
-                                    Width="2*" />
-                <DataGridTextColumn Header="Destination Path"
-                                    Binding="{Binding DestinationPath}"
-                                    Width="2*" />
-                <DataGridTextColumn Header="Moved At"
-                                    Binding="{Binding MovedAt, StringFormat='yyyy-MM-dd HH:mm:ss'}"
-                                    Width="150" />
-                <DataGridTemplateColumn Header="Open"
-                                        Width="60">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="📁"
-                                    ToolTip="Open destination folder"
-                                    Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
-                                    Width="30"
-                                    Height="30" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+        <Style x:Key="DataGridRoundedButton" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
-                <DataGridTemplateColumn Header="Actions"
-                                        Width="80">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="🗑"
-                                    ToolTip="Delete entry"
-                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
-                                    Width="30"
-                                    Height="30" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+    <!-- Custom Main App Container Structure -->
+    <Border x:Name="RootBorder"
+            Background="White"
+            CornerRadius="12"
+            BorderBrush="#DDD"
+            BorderThickness="1"
+            ClipToBounds="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,10,0,0">
-            <Button Content="Clear All History"
-                    Width="150"
-                    Height="30"
-                    Margin="0,0,10,0"
-                    Command="{Binding ClearAllCommand}" />
-            <Button Content="Refresh"
-                    Width="80"
-                    Height="30"
-                    Command="{Binding RefreshCommand}" />
-        </StackPanel>
-    </Grid>
-</controls:MetroWindow>
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0"
+                    Background="#FBFCFD"
+                    BorderBrush="LightGray"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="12,12,0,0"
+                    MouseDown="TitleBar_MouseDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <Image Source="/Assets/Images/top-image.png"
+                           Width="30"
+                           Height="30"
+                           Margin="0,0,8,0" />          
+                        <TextBlock Text="Move History"
+                                   FontSize="18"
+                                   FontFamily="Inter"
+                                   FontWeight="ExtraBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="#1E293B" />
+                    </StackPanel>
+
+                    <!-- Windows Controls (Minimize & Close) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Minimize_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/minimize.svg" Width="16" Height="16" />
+                        </Button>
+                        <Button Width="40"
+        Height="40"
+        Background="Transparent"
+        BorderThickness="0"
+        Click="MaximizeRestore_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/maximize.svg"
+                     Width="16"
+                     Height="16" />
+                        </Button>
+                        <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Close_Click">
+                            <!-- You can use your close icon path here or standard text option -->
+                            <TextBlock Text="✕" FontFamily="Inter" FontSize="14" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Workspace Elements Layout -->
+            <Grid Grid.Row="1" Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Clean Search Input Box -->
+                <Border Grid.Row="0"
+                        Margin="0,0,0,15"
+                        Background="#F8FAFC"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="10,2">
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             controls:TextBoxHelper.Watermark="Search by filename..."
+                             controls:TextBoxHelper.ClearTextButton="True"
+                             FontFamily="Inter"
+                             FontSize="14"
+                             Foreground="#1E293B"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Height="30"
+                             VerticalContentAlignment="Center" />
+                </Border>
+
+                <!-- Data Presentation Layer -->
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding CollectionView}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          RowHeaderWidth="0"
+                          SelectionMode="Single"
+                          Margin="0,0,0,15"
+                          Background="Transparent"
+                          BorderThickness="0">
+                    
+                    <!-- Attaching the custom ScrollBar to DataGrid resources -->
+                    <DataGrid.Resources>
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
+                    </DataGrid.Resources>
+                    
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Original File" Binding="{Binding OriginalFileName}" Width="*" />
+                        <DataGridTextColumn Header="New File" Binding="{Binding NewFileName}" Width="*" />
+                        <DataGridTextColumn Header="Source Path" Binding="{Binding SourcePath}" Width="2*" />
+                        <DataGridTextColumn Header="Destination Path" Binding="{Binding DestinationPath}" Width="2*" />
+                        <DataGridTextColumn Header="Moved At" Binding="{Binding MovedAt, StringFormat='yyyy-MM-dd HH:mm:ss'}" Width="150" />
+                        
+                        <!-- Open Destination Row Action Button -->
+                        <DataGridTemplateColumn Header="Open" Width="60">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="📁"
+                                            ToolTip="Open destination folder"
+                                            Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Width="28"
+                                            Height="28"
+                                            Background="#F1F5F9"
+                                            Style="{StaticResource DataGridRoundedButton}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Row Delete Action Button -->
+                        <DataGridTemplateColumn Header="Actions" Width="60">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="🗑"
+                                            ToolTip="Delete entry"
+                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Width="28"
+                                            Height="28"
+                                            Background="#FEE2E2"
+                                            Foreground="#EF4444"
+                                            Style="{StaticResource DataGridRoundedButton}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Bottom Bar Action Commands Layout -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Clear All History"
+                            Width="150"
+                            Height="35"
+                            Margin="0,0,10,0"
+                            Background="#EF4444"
+                            Foreground="White"
+                            FontFamily="Inter"
+                            FontWeight="Bold"
+                            Style="{StaticResource RoundedButton}"
+                            Command="{Binding ClearAllCommand}" />
+                    
+                    <Button Content="Refresh"
+                            Width="90"
+                            Height="35"
+                            Background="#F1F5F9"
+                            Foreground="#475569"
+                            FontFamily="Inter"
+                            FontWeight="Bold"
+                            Style="{StaticResource RoundedButton}"
+                            Command="{Binding RefreshCommand}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

@@ -1,26 +1,15 @@
-﻿using MahApps.Metro.Controls;
-using ShowStasher.MVVM.ViewModels;
+﻿using ShowStasher.MVVM.ViewModels;
 using ShowStasher.Services;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ShowStasher.MVVM.Views
 {
     /// <summary>
     /// Interaction logic for HistoryWindow.xaml
     /// </summary>
-    public partial class HistoryWindow : MetroWindow
+    public partial class HistoryWindow : Window  // Change this from MetroWindow to Window
     {
         public HistoryViewModel ViewModel { get; private set; }
 
@@ -35,6 +24,38 @@ namespace ShowStasher.MVVM.Views
             DataContext = ViewModel;
 
             Loaded += async (_, _) => await ViewModel.LoadAsync();
+        }
+
+        // Window interaction logic for your custom TitleBar
+        private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                this.DragMove();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+                WindowState = WindowState.Normal;
+            else
+                WindowState = WindowState.Maximized;
+        }
+
+        private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
         }
     }
 }

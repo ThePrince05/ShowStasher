@@ -7,14 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
 	<UseWindowsForms>true</UseWindowsForms>
-	<PackageIcon>movies_folder_20806.png</PackageIcon>
-	<ApplicationIcon>movies_folder_20806.ico</ApplicationIcon>
+	<PackageIcon>top-image.png</PackageIcon>
+	<ApplicationIcon>Assets\Images\top-image 2.ico</ApplicationIcon>
 	<PlatformTarget>x86</PlatformTarget>
 
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\Images\top-image.png" />
     <None Remove="Assets\placeholder.png" />
     <None Remove="Assets\SVG\dark-mode.svg" />
     <None Remove="Assets\SVG\maximize.svg" />
@@ -24,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="movies_folder_20806.ico" />
+    <Content Include="Assets\Images\top-image 2.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +43,13 @@
     <Resource Include="Assets\SVG\minimize.svg" />
     <Resource Include="Assets\SVG\more.svg" />
     <Resource Include="Assets\SVG\play.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\Images\top-image.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
