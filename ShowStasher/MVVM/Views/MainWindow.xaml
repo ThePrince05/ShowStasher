@@ -23,6 +23,8 @@
     <Window.Resources>
         <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:ProgressToTaskbarValueConverter x:Key="ProgressToTaskbarValueConverter" />
+        <converters:BusyToTaskbarStateConverter x:Key="BusyToTaskbarStateConverter" />
         <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
             <Setter Property="Width" Value="8"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -260,7 +262,12 @@
             </Setter>
         </Style>
     </Window.Resources>
-
+    
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo ProgressState="{Binding IsBusy, Converter={StaticResource BusyToTaskbarStateConverter}}"
+                         ProgressValue="{Binding Progress, Converter={StaticResource ProgressToTaskbarValueConverter}}" />
+    </Window.TaskbarItemInfo>
+    
     <Border x:Name="RootBorder"
             Background="White"
             CornerRadius="12"
