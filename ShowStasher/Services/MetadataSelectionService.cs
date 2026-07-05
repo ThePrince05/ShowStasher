@@ -11,14 +11,44 @@ namespace ShowStasher.Services
 {
     public class MetadataSelectionService : IMetadataSelectionService
     {
-        public Task<int?> PromptUserToSelectMovieAsync(string originalTitle, IReadOnlyList<SearchCandidate> candidates)
+        // Cache to store selection results for the duration of the app session
+        private readonly Dictionary<string, int?> _seriesSelectionCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int?> _movieSelectionCache = new(StringComparer.OrdinalIgnoreCase);
+
+        public async Task<int?> PromptUserToSelectMovieAsync(string originalTitle, IReadOnlyList<SearchCandidate> candidates)
         {
-            return ShowSelectionDialogAsync($"Select a movie for: {originalTitle}", candidates);
+            if (_movieSelectionCache.TryGetValue(originalTitle, out var cachedId))
+            {
+                return cachedId;
+            }
+
+            var result = await ShowSelectionDialogAsync($"Select a movie for: {originalTitle}", candidates);
+
+            // Cache the choice (even if null/canceled, so it doesn't repeatedly prompt on failure)
+            _movieSelectionCache[originalTitle] = result;
+            return result;
         }
 
-        public Task<int?> PromptUserToSelectSeriesAsync(string originalTitle, IReadOnlyList<SearchCandidate> candidates)
+        public async Task<int?> PromptUserToSelectSeriesAsync(string originalTitle, IReadOnlyList<SearchCandidate> candidates)
         {
-            return ShowSelectionDialogAsync($"Select a series for: {originalTitle}", candidates);
+            // If we already selected a candidate for this series title in this session, return it
+            if (_seriesSelectionCache.TryGetValue(originalTitle, out var cachedId))
+            {
+                return cachedId;
+            }
+
+            var result = await ShowSelectionDialogAsync($"Select a series for: {originalTitle}", candidates);
+
+            // Cache the choice for subsequent seasons/episodes
+            _seriesSelectionCache[originalTitle] = result;
+            return result;
+        }
+
+        // Optional: Method to clear the cache if you want to reset selections between different imports
+        public void ClearSessionCache()
+        {
+            _seriesSelectionCache.Clear();
+            _movieSelectionCache.Clear();
         }
 
         private Task<int?> ShowSelectionDialogAsync(string promptMessage, IReadOnlyList<SearchCandidate> candidates)
@@ -30,16 +60,13 @@ namespace ShowStasher.Services
                 Owner = System.Windows.Application.Current.MainWindow
             };
 
-            // Close the dialog when the selection task completes
             vm.SelectionTask.ContinueWith(_ =>
             {
-                // Must close on the UI thread
                 dialog.Dispatcher.Invoke(() => dialog.Close());
             });
 
-            dialog.ShowDialog(); // blocks until dialog is closed
+            dialog.ShowDialog();
             return vm.SelectionTask;
         }
-
     }
 }
