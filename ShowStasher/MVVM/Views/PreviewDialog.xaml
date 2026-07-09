@@ -6,16 +6,34 @@
         xmlns:local="clr-namespace:ShowStasher.MVVM.Views"
         xmlns:converters="clr-namespace:ShowStasher.Converters"
         xmlns:models="clr-namespace:ShowStasher.MVVM.Models"
+        xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
         Title="Preview Organization"
         Height="500"
         Width="700"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
 
     <Window.Resources>
         <converters:FolderFileIconConverter x:Key="FolderFileIconConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <Style x:Key="RoundedButton" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <DataTemplate x:Key="RenameTemplate">
             <TextBlock VerticalAlignment="Center"
@@ -38,48 +56,116 @@
                                             DefaultTemplate="{StaticResource DefaultTemplate}" />
     </Window.Resources>
 
-    <DockPanel LastChildFill="True">
-        <!-- Buttons at bottom -->
-        <StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="10">
-            <Button Content="Cancel"
-                    Command="{Binding CancelCommand}"
-                    Margin="0,0,10,0"
-                    IsCancel="True" />
-            <Button Content="Confirm"
-                    Command="{Binding ConfirmCommand}"
-                    IsDefault="True" />
-        </StackPanel>
+    <Border x:Name="RootBorder"
+            Background="White"
+            CornerRadius="12"
+            BorderBrush="#DDD"
+            BorderThickness="1"
+            ClipToBounds="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <!-- TreeView -->
-        <TreeView ItemsSource="{Binding RootItems}"
-                  Background="White"
-                  BorderThickness="0"
-                  Margin="10">
-            <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type models:PreviewItem}"
-                                          ItemsSource="{Binding Children}">
-                    <StackPanel Orientation="Horizontal"
-                                Margin="2"
-                                ToolTip="{Binding DestinationPath}">
-                        <!-- Checkbox shown only for series folders -->
-                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,5,0"
-                                  Visibility="{Binding ShowCheckbox, Converter={StaticResource BoolToVisibilityConverter}}" />
+            <Border Grid.Row="0"
+                    Background="#FBFCFD"
+                    BorderBrush="LightGray"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="12,12,0,0"
+                    MouseDown="TitleBar_MouseDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <Image Width="16"
-                               Height="16"
-                               Margin="0,0,5,0"
-                               Source="{Binding IsFolder, Converter={StaticResource FolderFileIconConverter}}" />
-
-                        <ContentControl Content="{Binding}"
-                                        ContentTemplateSelector="{StaticResource PreviewItemTemplateSelector}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <Image Source="/Assets/Images/top-image.png"
+                               Width="30"
+                               Height="30"
+                               Margin="0,0,8,0" />
+                        <TextBlock Text="Preview Organization"
+                                   FontSize="18"
+                                   FontFamily="Inter"
+                                   FontWeight="ExtraBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="#1E293B" />
                     </StackPanel>
-                </HierarchicalDataTemplate>
-            </TreeView.Resources>
-        </TreeView>
-    </DockPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Minimize_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/minimize.svg" Width="16" Height="16" />
+                        </Button>
+                        <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="MaximizeRestore_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/maximize.svg" Width="16" Height="16" />
+                        </Button>
+                        <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Close_Click">
+                            <svgc:SvgViewbox Source="/Assets/SVG/close.svg"
+                                Width="16"
+                                Height="16" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <DockPanel Grid.Row="1" LastChildFill="True">
+                <StackPanel DockPanel.Dock="Bottom"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="20,15,20,20">
+
+                    <Button Content="Confirm"
+                            Width="90"
+                            Height="35"
+                            Margin="0,0,10,0"
+                            Background="#3B82F6"
+                            Foreground="White"
+                            FontFamily="Inter"
+                            FontWeight="Bold"
+                            Style="{StaticResource RoundedButton}"
+                            Command="{Binding ConfirmCommand}"
+                            IsDefault="True" />
+
+                    <Button Content="Cancel"
+                            Width="90"
+                            Height="35"
+                            Background="#F1F5F9"
+                            Foreground="#475569"
+                            FontFamily="Inter"
+                            FontWeight="Bold"
+                            Style="{StaticResource RoundedButton}"
+                            Command="{Binding CancelCommand}"
+                            IsCancel="True" />
+                </StackPanel>
+
+                <TreeView ItemsSource="{Binding RootItems}"
+                          Background="White"
+                          BorderThickness="0"
+                          Margin="20,20,20,0">
+                    <TreeView.Resources>
+                        <HierarchicalDataTemplate DataType="{x:Type models:PreviewItem}"
+                                                  ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="2"
+                                        ToolTip="{Binding DestinationPath}">
+                                <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,5,0"
+                                          Visibility="{Binding ShowCheckbox, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                <Image Width="16"
+                                       Height="16"
+                                       Margin="0,0,5,0"
+                                       Source="{Binding IsFolder, Converter={StaticResource FolderFileIconConverter}}" />
+
+                                <ContentControl Content="{Binding}"
+                                                ContentTemplateSelector="{StaticResource PreviewItemTemplateSelector}" />
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.Resources>
+                </TreeView>
+            </DockPanel>
+        </Grid>
+    </Border>
 </Window>

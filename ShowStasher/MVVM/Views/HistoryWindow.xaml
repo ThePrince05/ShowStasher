@@ -4,6 +4,7 @@
         xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         Title="Move History"
         Height="500"
@@ -126,17 +127,19 @@
                             <svgc:SvgViewbox Source="/Assets/SVG/minimize.svg" Width="16" Height="16" />
                         </Button>
                         <Button Width="40"
-        Height="40"
-        Background="Transparent"
-        BorderThickness="0"
-        Click="MaximizeRestore_Click">
+                            Height="40"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="MaximizeRestore_Click">
                             <svgc:SvgViewbox Source="/Assets/SVG/maximize.svg"
-                     Width="16"
-                     Height="16" />
+                             Width="16"
+                             Height="16" />
                         </Button>
                         <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Close_Click">
                             <!-- You can use your close icon path here or standard text option -->
-                            <TextBlock Text="✕" FontFamily="Inter" FontSize="14" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <svgc:SvgViewbox Source="/Assets/SVG/close.svg"
+                                Width="16"
+                                Height="16" />
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -188,43 +191,48 @@
                     <DataGrid.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
                     </DataGrid.Resources>
-                    
+
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Original File" Binding="{Binding OriginalFileName}" Width="*" />
                         <DataGridTextColumn Header="New File" Binding="{Binding NewFileName}" Width="*" />
                         <DataGridTextColumn Header="Source Path" Binding="{Binding SourcePath}" Width="2*" />
                         <DataGridTextColumn Header="Destination Path" Binding="{Binding DestinationPath}" Width="2*" />
                         <DataGridTextColumn Header="Moved At" Binding="{Binding MovedAt, StringFormat='yyyy-MM-dd HH:mm:ss'}" Width="150" />
-                        
-                        <!-- Open Destination Row Action Button -->
+
                         <DataGridTemplateColumn Header="Open" Width="60">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="📁"
-                                            ToolTip="Open destination folder"
-                                            Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"
-                                            Width="28"
-                                            Height="28"
-                                            Background="#F1F5F9"
-                                            Style="{StaticResource DataGridRoundedButton}" />
+                                    <Button ToolTip="Open destination folder"
+                        Command="{Binding DataContext.OpenDestinationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding}"
+                        Width="28"
+                        Height="28"
+                        Background="#F1F5F9"
+                        Style="{StaticResource DataGridRoundedButton}">
+                                        <iconPacks:PackIconMaterial Kind="FolderOpen" 
+                                                Width="14" 
+                                                Height="14" 
+                                                Foreground="#475569" />
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <!-- Row Delete Action Button -->
                         <DataGridTemplateColumn Header="Actions" Width="60">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="🗑"
-                                            ToolTip="Delete entry"
-                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"
-                                            Width="28"
-                                            Height="28"
-                                            Background="#FEE2E2"
-                                            Foreground="#EF4444"
-                                            Style="{StaticResource DataGridRoundedButton}" />
+                                    <Button ToolTip="Delete entry"
+                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding}"
+                        Width="28"
+                        Height="28"
+                        Background="#FEE2E2"
+                        Style="{StaticResource DataGridRoundedButton}">
+                                        <iconPacks:PackIconMaterial Kind="TrashCanOutline" 
+                                                Width="14" 
+                                                Height="14" 
+                                                Foreground="#EF4444" />
+                                    </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

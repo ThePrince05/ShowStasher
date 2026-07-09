@@ -70,12 +70,14 @@ namespace ShowStasher.MVVM.ViewModels
             await LoadAsync();
         }
 
+  
         [RelayCommand]
         private async Task Delete(MoveHistory item)
         {
             if (item != null)
             {
-                await _dbService.DeleteMoveHistoryAsync(item.Id);
+                // Pass the entire metadata tracking item instead of item.Id
+                await _dbService.DeleteMoveHistoryAsync(item);
                 MoveHistories.Remove(item);
             }
         }

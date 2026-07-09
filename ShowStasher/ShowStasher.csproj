@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Remove="Assets\placeholder.png" />
+    <None Remove="Assets\SVG\close.svg" />
     <None Remove="Assets\SVG\dark-mode.svg" />
     <None Remove="Assets\SVG\maximize.svg" />
     <None Remove="Assets\SVG\minimize.svg" />
@@ -30,6 +31,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="5.1.0" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.2.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
@@ -38,11 +40,24 @@
   <ItemGroup>
     <Resource Include="Assets\Images\placeholder.png" />
     <Resource Include="Assets\Images\top-image.png" />
-    <Resource Include="Assets\SVG\dark-mode.svg" />
-    <Resource Include="Assets\SVG\maximize.svg" />
-    <Resource Include="Assets\SVG\minimize.svg" />
-    <Resource Include="Assets\SVG\more.svg" />
-    <Resource Include="Assets\SVG\play.svg" />
+    <Resource Include="Assets\SVG\close.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SVG\dark-mode.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SVG\maximize.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SVG\minimize.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SVG\more.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SVG\play.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

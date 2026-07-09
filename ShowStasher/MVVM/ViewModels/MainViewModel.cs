@@ -50,9 +50,17 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 string tmdbApiKey = await EnsureTmdbApiKeyAsync();
 
+                // 1. Fetch the last used paths from the settings database table
+                string savedSource = await _dbService.GetSettingAsync("LastSourcePath");
+                string savedDest = await _dbService.GetSettingAsync("LastDestinationPath");
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     InitializeServices(tmdbApiKey);
+
+                    // 2. Assign the loaded paths to your properties on the UI thread
+                    if (!string.IsNullOrEmpty(savedSource)) SourcePath = savedSource;
+                    if (!string.IsNullOrEmpty(savedDest)) DestinationPath = savedDest;
                 });
             });
         }
@@ -118,26 +126,34 @@ namespace ShowStasher.MVVM.ViewModels
         }
 
         [RelayCommand]
-        private void BrowseSource()
+        private async Task BrowseSource()
         {
             using var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 SourcePath = dialog.SelectedPath;
                 Log("Selected source folder: " + SourcePath);
+
+                // Save the selection to the database
+                await _dbService.SaveOrUpdateSettingAsync("LastSourcePath", SourcePath);
             }
         }
 
         [RelayCommand]
-        private void BrowseDestination()
+        private async Task BrowseDestination()
         {
             using var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 DestinationPath = dialog.SelectedPath;
                 Log("Selected destination folder: " + DestinationPath);
+
+                // Save the selection to the database
+                await _dbService.SaveOrUpdateSettingAsync("LastDestinationPath", DestinationPath);
             }
         }
+
+   
 
         [RelayCommand]
         private async Task PreviewAndOrganizeAsync()

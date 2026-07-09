@@ -13,6 +13,10 @@ namespace ShowStasher.MVVM.Models
         public string NewFileName { get; set; }
         public string SourcePath { get; set; }
         public string DestinationPath { get; set; }
+        public string? LookupKey { get; set; }
+        public string? Type { get; set; }
+        public int? Season { get; set; }
+        public int? Episode { get; set; }
         public DateTime MovedAt { get; set; } // Optional – keep if you want time tracking
     }
 

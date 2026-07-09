@@ -115,7 +115,9 @@
                             <svgc:SvgViewbox Source="/Assets/SVG/maximize.svg" Width="16" Height="16" />
                         </Button>
                         <Button Width="40" Height="40" Background="Transparent" BorderThickness="0" Click="Close_Click">
-                            <TextBlock Text="✕" FontFamily="Inter" FontSize="14" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <svgc:SvgViewbox Source="/Assets/SVG/close.svg"
+                                Width="16"
+                                Height="16" />
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -140,48 +142,48 @@
 
                 <!-- Posters Grid -->
                 <ListBox Grid.Row="1"
-                         ItemsSource="{Binding Candidates}"
-                         SelectedItem="{Binding SelectedCandidate}"
-                         Background="White"
-                         BorderBrush="#E2E8F0"
-                         BorderThickness="1"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
-
+         ItemsSource="{Binding Candidates}"
+         SelectedItem="{Binding SelectedCandidate}"
+         Background="White"
+         BorderBrush="#E2E8F0"
+         BorderThickness="1"
+         ScrollViewer.VerticalScrollBarVisibility="Auto"
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
                     </ListBox.Resources>
 
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="4" />
+                            <WrapPanel Orientation="Horizontal" Margin="8" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
 
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Margin="5"
-                                    Padding="5"
-                                    CornerRadius="6"
-                                    BorderThickness="1"
-                                    BorderBrush="Transparent"
-                                    Background="White">
-                                <StackPanel>
+                            <Border Margin="8"
+                    Padding="6"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="Transparent"
+                    Background="White">
+                                <StackPanel Width="120">
                                     <Image Source="{Binding FullPosterUrl}"
-                                           Width="120"
-                                           Height="180"
-                                           Stretch="Uniform"
-                                           Margin="0,0,0,6"
-                                           SnapsToDevicePixels="True" />
+                           Width="120"
+                           Height="180"
+                           Stretch="Uniform"
+                           Margin="0,0,0,6"
+                           SnapsToDevicePixels="True" />
                                     <TextBlock Text="{Binding DisplayTitle}"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               TextAlignment="Center"
-                                               Foreground="#1E293B"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               Height="40"
-                                               LineStackingStrategy="BlockLineHeight"
-                                               LineHeight="16" />
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextAlignment="Center"
+                               Foreground="#1E293B"
+                               TextWrapping="Wrap"
+                               TextTrimming="CharacterEllipsis"
+                               Height="40"
+                               LineStackingStrategy="BlockLineHeight"
+                               LineHeight="16" />
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
@@ -189,7 +191,7 @@
 
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
-                            <Setter Property="Margin" Value="5" />
+                            <Setter Property="Margin" Value="0" />
                             <Setter Property="Cursor" Value="Hand" />
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="Background" Value="Transparent" />

@@ -41,7 +41,7 @@ namespace ShowStasher.Services
             var tableCmd = connection.CreateCommand();
             tableCmd.CommandText =
             @"
-           CREATE TABLE IF NOT EXISTS MediaMetadataCache (
+            CREATE TABLE IF NOT EXISTS MediaMetadataCache (
             Id INTEGER PRIMARY KEY AUTOINCREMENT,
             LookupKey TEXT,
             Title TEXT NOT NULL,
@@ -64,15 +64,18 @@ namespace ShowStasher.Services
             NewFileName TEXT NOT NULL,
             SourcePath TEXT NOT NULL,
             DestinationPath TEXT NOT NULL,
-            MovedAt TEXT NOT NULL
+            MovedAt TEXT NOT NULL,
+            LookupKey TEXT,
+            Type TEXT,
+            Season INTEGER,
+            Episode INTEGER
             );
 
             CREATE TABLE IF NOT EXISTS Settings (
             Key TEXT PRIMARY KEY,
             Value TEXT NOT NULL
             );
-
-        ";
+            ";
             tableCmd.ExecuteNonQuery();
 
         }
@@ -206,10 +209,10 @@ namespace ShowStasher.Services
                 _log("[DB] Connection opened for SaveMoveHistoryAsync", AppLogLevel.Debug);
 
                 string sql = @"
-            INSERT INTO History 
-                (OriginalFileName, NewFileName, SourcePath, DestinationPath, MovedAt)
-            VALUES 
-                (@OriginalFileName, @NewFileName, @SourcePath, @DestinationPath, @MovedAt);";
+    INSERT INTO History 
+        (OriginalFileName, NewFileName, SourcePath, DestinationPath, MovedAt, LookupKey, Type, Season, Episode)
+    VALUES 
+        (@OriginalFileName, @NewFileName, @SourcePath, @DestinationPath, @MovedAt, @LookupKey, @Type, @Season, @Episode);";
 
                 using var command = new SqliteCommand(sql, connection);
                 command.Parameters.AddWithValue("@OriginalFileName", history.OriginalFileName);
@@ -217,6 +220,10 @@ namespace ShowStasher.Services
                 command.Parameters.AddWithValue("@SourcePath", history.SourcePath);
                 command.Parameters.AddWithValue("@DestinationPath", history.DestinationPath);
                 command.Parameters.AddWithValue("@MovedAt", history.MovedAt.ToString("o")); // ISO format
+                command.Parameters.AddWithValue("@LookupKey", history.LookupKey ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Type", history.Type ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Season", history.Season ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Episode", history.Episode ?? (object)DBNull.Value);
 
                 await command.ExecuteNonQueryAsync();
                 _log("[DB] Connection closed for SaveMoveHistoryAsync", AppLogLevel.Debug);
@@ -227,9 +234,11 @@ namespace ShowStasher.Services
             }
         }
 
-        public Task DeleteMoveHistoryAsync(int id)
+        public Task DeleteMoveHistoryAsync(MoveHistory item)
         {
-            _log($"[DB] Enter DeleteMoveHistoryAsync: id={id}", AppLogLevel.Info);
+            if (item == null) return Task.CompletedTask;
+
+            _log($"[DB] Enter DeleteMoveHistoryAsync: id={item.Id}", AppLogLevel.Info);
             return Task.Run(() =>
             {
                 try
@@ -237,9 +246,37 @@ namespace ShowStasher.Services
                     using var connection = new SqliteConnection(ConnectionString);
                     connection.Open();
                     _log("[DB] Connection opened for DeleteMoveHistoryAsync", AppLogLevel.Debug);
-                    using var command = new SqliteCommand("DELETE FROM History WHERE Id = @id", connection);
-                    command.Parameters.AddWithValue("@id", id);
-                    command.ExecuteNonQuery(); // synchronous delete
+
+                    using var transaction = connection.BeginTransaction();
+
+                    // Delete from History
+                    using var command = new SqliteCommand("DELETE FROM History WHERE Id = @id", connection, transaction);
+                    command.Parameters.AddWithValue("@id", item.Id);
+                    command.ExecuteNonQuery();
+
+                    // Cascade delete from MediaMetadataCache if keys are present
+                    if (!string.IsNullOrEmpty(item.LookupKey) && !string.IsNullOrEmpty(item.Type))
+                    {
+                        using var cacheCmd = new SqliteCommand(@"
+                    DELETE FROM MediaMetadataCache 
+                    WHERE LookupKey = @lookupKey 
+                      AND Type = @type 
+                      AND Season = @season 
+                      AND Episode = @episode", connection, transaction);
+
+                        int seasonValue = item.Season ?? SentinelValue;
+                        int episodeValue = item.Episode ?? SentinelValue;
+
+                        cacheCmd.Parameters.AddWithValue("@lookupKey", item.LookupKey);
+                        cacheCmd.Parameters.AddWithValue("@type", item.Type.Trim().ToLowerInvariant());
+                        cacheCmd.Parameters.AddWithValue("@season", seasonValue);
+                        cacheCmd.Parameters.AddWithValue("@episode", episodeValue);
+
+                        int cacheRows = cacheCmd.ExecuteNonQuery();
+                        _log($"[DB] Cascaded single item delete to cache. Rows affected: {cacheRows}", AppLogLevel.Info);
+                    }
+
+                    transaction.Commit();
                     _log("[DB] Connection closed for DeleteMoveHistoryAsync", AppLogLevel.Debug);
                 }
                 catch (Exception ex)
@@ -259,9 +296,17 @@ namespace ShowStasher.Services
                     using var connection = new SqliteConnection(ConnectionString);
                     connection.Open();
                     _log("[DB] Connection opened for ClearAllHistoryAsync", AppLogLevel.Debug);
-                    using var command = new SqliteCommand("DELETE FROM History", connection);
-                    command.ExecuteNonQuery(); // synchronous delete
-                    _log("[DB] Connection closed for ClearAllHistoryAsync", AppLogLevel.Debug);
+
+                    using var transaction = connection.BeginTransaction();
+
+                    using var command = new SqliteCommand("DELETE FROM History", connection, transaction);
+                    command.ExecuteNonQuery();
+
+                    using var cacheCommand = new SqliteCommand("DELETE FROM MediaMetadataCache", connection, transaction);
+                    cacheCommand.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    _log("[DB] Connection closed for ClearAllHistoryAsync (History & Cache tables cleared)", AppLogLevel.Debug);
                 }
                 catch (Exception ex)
                 {
@@ -293,7 +338,11 @@ namespace ShowStasher.Services
                         NewFileName = reader["NewFileName"]?.ToString(),
                         SourcePath = reader["SourcePath"]?.ToString(),
                         DestinationPath = reader["DestinationPath"]?.ToString(),
-                        MovedAt = DateTime.Parse(reader["MovedAt"]?.ToString() ?? DateTime.MinValue.ToString())
+                        MovedAt = DateTime.Parse(reader["MovedAt"]?.ToString() ?? DateTime.MinValue.ToString()),
+                        LookupKey = reader["LookupKey"]?.ToString(),
+                        Type = reader["Type"]?.ToString(),
+                        Season = reader.IsDBNull(reader.GetOrdinal("Season")) ? null : reader.GetInt32(reader.GetOrdinal("Season")),
+                        Episode = reader.IsDBNull(reader.GetOrdinal("Episode")) ? null : reader.GetInt32(reader.GetOrdinal("Episode"))
                     });
                 }
 

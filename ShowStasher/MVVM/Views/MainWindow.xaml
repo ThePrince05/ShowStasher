@@ -605,6 +605,7 @@
                             ItemsSource="{Binding LogMessages}"
                             SelectedItem="{Binding SelectedLogMessage}"
                             behaviours:ListBoxBehaviors.BindableSelectedItems="{Binding SelectedLogMessages}"
+                            behaviours:ListBoxBehaviors.AutoScrollToBottom="True"
                             Background="Transparent"
                             BorderThickness="0"
                             FontFamily="Consolas"
