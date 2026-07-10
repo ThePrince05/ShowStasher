@@ -153,19 +153,19 @@ namespace ShowStasher.MVVM.ViewModels
             }
         }
 
-   
+
 
         [RelayCommand]
         private async Task PreviewAndOrganizeAsync()
         {
             if (string.IsNullOrEmpty(SourcePath) || string.IsNullOrEmpty(DestinationPath))
             {
-                SetStatusMessage("Please select both source and destination folders."); // Fixed
+                SetStatusMessage("Please select both source and destination folders.");
                 Log("Missing source or destination path.", AppLogLevel.Error);
                 return;
             }
 
-            SetStatusMessage("Preparing preview..."); // Fixed
+            SetStatusMessage("Preparing preview...");
             Log("Generating dry run preview...", AppLogLevel.Action);
             IsBusy = true;
             Progress = 0;
@@ -173,6 +173,15 @@ namespace ShowStasher.MVVM.ViewModels
             try
             {
                 var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
+
+                // Add this check to prevent the dialog from opening if there are no files
+                if (previewItems == null || previewItems.Count == 0)
+                {
+                    SetStatusMessage("No files to organize.");
+                    Log("No valid files were found in the selected source folder.", AppLogLevel.Warning);
+                    return; // Exit early
+                }
+
                 var previewViewModel = new PreviewViewModel();
 
                 previewViewModel.RootItems.Clear();
@@ -205,12 +214,12 @@ namespace ShowStasher.MVVM.ViewModels
 
                 if (selectedFilesToOrganize.Count == 0)
                 {
-                    SetStatusMessage("Organization canceled."); // Fixed
+                    SetStatusMessage("Organization canceled.");
                     Log("Organization canceled by user (no files selected).", AppLogLevel.Warning);
                     return;
                 }
 
-                SetStatusMessage("Organizing selected files..."); // Fixed
+                SetStatusMessage("Organizing selected files...");
                 Log($"Starting organization of {selectedFilesToOrganize.Count} files...", AppLogLevel.Action);
 
                 var progressReporter = new Progress<int>(percent => Progress = percent);
@@ -218,12 +227,12 @@ namespace ShowStasher.MVVM.ViewModels
                 await _fileOrganizerService.OrganizeFilesAsync(
                     selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter);
 
-                SetStatusMessage("Done!"); // Fixed
+                SetStatusMessage("Done!");
                 Log("Finished organizing selected files.", AppLogLevel.Success);
             }
             catch (Exception ex)
             {
-                SetStatusMessage("Error occurred during organizing."); // Fixed
+                SetStatusMessage("Error occurred during organizing.");
                 Log($"Error during organization: {ex.Message}", AppLogLevel.Error);
             }
             finally
