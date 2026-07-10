@@ -249,35 +249,34 @@ namespace ShowStasher.Services
 
                     using var transaction = connection.BeginTransaction();
 
-                    // Delete from History
+                    // 1. Delete the specific tracking entry from History
                     using var command = new SqliteCommand("DELETE FROM History WHERE Id = @id", connection, transaction);
                     command.Parameters.AddWithValue("@id", item.Id);
-                    command.ExecuteNonQuery();
+                    int historyRows = command.ExecuteNonQuery();
+                    _log($"[DB] Deleted from History table. Rows affected: {historyRows} for Id={item.Id}", AppLogLevel.Info);
 
-                    // Cascade delete from MediaMetadataCache if keys are present
+                    // 2. Cascade delete ALL records sharing this lookup key and type from the cache
                     if (!string.IsNullOrEmpty(item.LookupKey) && !string.IsNullOrEmpty(item.Type))
                     {
+                        // Ensure keys are safely normalized to guarantee database matching
+                        string normalizedLookupKey = NormalizeTitleKey(item.LookupKey);
+                        string normalizedType = item.Type.Trim().ToLowerInvariant();
+
+                        // 🌟 CHANGED: Removed 'Season = @season' and 'Episode = @episode' filters
                         using var cacheCmd = new SqliteCommand(@"
                     DELETE FROM MediaMetadataCache 
                     WHERE LookupKey = @lookupKey 
-                      AND Type = @type 
-                      AND Season = @season 
-                      AND Episode = @episode", connection, transaction);
+                      AND Type = @type", connection, transaction);
 
-                        int seasonValue = item.Season ?? SentinelValue;
-                        int episodeValue = item.Episode ?? SentinelValue;
-
-                        cacheCmd.Parameters.AddWithValue("@lookupKey", item.LookupKey);
-                        cacheCmd.Parameters.AddWithValue("@type", item.Type.Trim().ToLowerInvariant());
-                        cacheCmd.Parameters.AddWithValue("@season", seasonValue);
-                        cacheCmd.Parameters.AddWithValue("@episode", episodeValue);
+                        cacheCmd.Parameters.AddWithValue("@lookupKey", normalizedLookupKey);
+                        cacheCmd.Parameters.AddWithValue("@type", normalizedType);
 
                         int cacheRows = cacheCmd.ExecuteNonQuery();
-                        _log($"[DB] Cascaded single item delete to cache. Rows affected: {cacheRows}", AppLogLevel.Info);
+                        _log($"[DB] Cascaded group delete complete. Cleared {cacheRows} items from cache matching LookupKey='{normalizedLookupKey}' ({normalizedType})", AppLogLevel.Info);
                     }
 
                     transaction.Commit();
-                    _log("[DB] Connection closed for DeleteMoveHistoryAsync", AppLogLevel.Debug);
+                    _log("[DB] Connection closed and transaction committed for DeleteMoveHistoryAsync", AppLogLevel.Debug);
                 }
                 catch (Exception ex)
                 {
@@ -329,20 +328,35 @@ namespace ShowStasher.Services
                 using var command = new SqliteCommand(sql, connection);
                 using var reader = await command.ExecuteReaderAsync();
 
+                // Cache column indexes for safer, faster reading
+                int idOrd = reader.GetOrdinal("Id");
+                int origOrd = reader.GetOrdinal("OriginalFileName");
+                int newOrd = reader.GetOrdinal("NewFileName");
+                int srcOrd = reader.GetOrdinal("SourcePath");
+                int destOrd = reader.GetOrdinal("DestinationPath");
+                int movedOrd = reader.GetOrdinal("MovedAt");
+                int lookupOrd = reader.GetOrdinal("LookupKey");
+                int typeOrd = reader.GetOrdinal("Type");
+                int seasonOrd = reader.GetOrdinal("Season");
+                int epOrd = reader.GetOrdinal("Episode");
+
                 while (await reader.ReadAsync())
                 {
                     list.Add(new MoveHistory
                     {
-                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        OriginalFileName = reader["OriginalFileName"]?.ToString(),
-                        NewFileName = reader["NewFileName"]?.ToString(),
-                        SourcePath = reader["SourcePath"]?.ToString(),
-                        DestinationPath = reader["DestinationPath"]?.ToString(),
-                        MovedAt = DateTime.Parse(reader["MovedAt"]?.ToString() ?? DateTime.MinValue.ToString()),
-                        LookupKey = reader["LookupKey"]?.ToString(),
-                        Type = reader["Type"]?.ToString(),
-                        Season = reader.IsDBNull(reader.GetOrdinal("Season")) ? null : reader.GetInt32(reader.GetOrdinal("Season")),
-                        Episode = reader.IsDBNull(reader.GetOrdinal("Episode")) ? null : reader.GetInt32(reader.GetOrdinal("Episode"))
+                        Id = reader.GetInt32(idOrd),
+                        OriginalFileName = reader.IsDBNull(origOrd) ? null : reader.GetString(origOrd),
+                        NewFileName = reader.IsDBNull(newOrd) ? null : reader.GetString(newOrd),
+                        SourcePath = reader.IsDBNull(srcOrd) ? null : reader.GetString(srcOrd),
+                        DestinationPath = reader.IsDBNull(destOrd) ? null : reader.GetString(destOrd),
+                        MovedAt = DateTime.Parse(reader.IsDBNull(movedOrd) ? DateTime.MinValue.ToString() : reader.GetString(movedOrd)),
+
+                        // 🌟 FIX: Cleanly keep strings as null if the database value is null
+                        LookupKey = reader.IsDBNull(lookupOrd) ? null : reader.GetString(lookupOrd),
+                        Type = reader.IsDBNull(typeOrd) ? null : reader.GetString(typeOrd),
+
+                        Season = reader.IsDBNull(seasonOrd) ? null : reader.GetInt32(seasonOrd),
+                        Episode = reader.IsDBNull(epOrd) ? null : reader.GetInt32(epOrd)
                     });
                 }
 

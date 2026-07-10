@@ -347,11 +347,14 @@ namespace ShowStasher.Services
 
             _log($"Generated filename: '{newFileName}' in folder: '{targetFolder}'", AppLogLevel.Info);
 
+            // Inside MoveAndOrganizeAsync: Find the block where the file is moved and update the method call
             if (!File.Exists(newFilePath))
             {
                 await Task.Run(() => File.Move(filePath, newFilePath));
                 _log($"Moved file:\nFROM: {filePath}\nTO:   {newFilePath}", AppLogLevel.Success);
-                await LogFileMoveToHistoryAsync(filePath, newFilePath);
+
+                // 🌟 FIX: Add 'metadata' as the third parameter here
+                await LogFileMoveToHistoryAsync(filePath, newFilePath, metadata);
             }
             else
             {
@@ -364,7 +367,8 @@ namespace ShowStasher.Services
 
 
 
-        private async Task LogFileMoveToHistoryAsync(string originalFilePath, string newFilePath)
+        // 1. Update this method to accept the metadata object
+        private async Task LogFileMoveToHistoryAsync(string originalFilePath, string newFilePath, MediaMetadata metadata)
         {
             var historyEntry = new MoveHistory
             {
@@ -372,7 +376,13 @@ namespace ShowStasher.Services
                 NewFileName = Path.GetFileName(newFilePath),
                 SourcePath = Path.GetDirectoryName(originalFilePath)!,
                 DestinationPath = Path.GetDirectoryName(newFilePath)!,
-                MovedAt = DateTime.UtcNow
+                MovedAt = DateTime.UtcNow,
+
+                // 🌟 FIX: Map the metadata properties onto the history record
+                LookupKey = metadata.LookupKey,
+                Type = metadata.Type,
+                Season = metadata.Season,
+                Episode = metadata.Episode
             };
 
             await _dbService.SaveMoveHistoryAsync(historyEntry);

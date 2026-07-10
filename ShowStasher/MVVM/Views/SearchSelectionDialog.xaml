@@ -1,6 +1,7 @@
 ﻿<Window x:Class="ShowStasher.MVVM.Views.SearchSelectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:ShowStasher.Helpers"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         Title="Select Match"
         Height="600"
@@ -142,13 +143,13 @@
 
                 <!-- Posters Grid -->
                 <ListBox Grid.Row="1"
-         ItemsSource="{Binding Candidates}"
-         SelectedItem="{Binding SelectedCandidate}"
-         Background="White"
-         BorderBrush="#E2E8F0"
-         BorderThickness="1"
-         ScrollViewer.VerticalScrollBarVisibility="Auto"
-         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                     ItemsSource="{Binding Candidates}"
+                     SelectedItem="{Binding SelectedCandidate}"
+                     Background="White"
+                     BorderBrush="#E2E8F0"
+                     BorderThickness="1"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
                     </ListBox.Resources>
@@ -175,15 +176,17 @@
                            Margin="0,0,0,6"
                            SnapsToDevicePixels="True" />
                                     <TextBlock Text="{Binding DisplayTitle}"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               TextAlignment="Center"
-                               Foreground="#1E293B"
-                               TextWrapping="Wrap"
-                               TextTrimming="CharacterEllipsis"
-                               Height="40"
-                               LineStackingStrategy="BlockLineHeight"
-                               LineHeight="16" />
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       TextAlignment="Center"
+                                       Foreground="#1E293B"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Height="40"
+                                       Background="Transparent"
+                                       LineStackingStrategy="BlockLineHeight"
+                                       LineHeight="16" 
+                                       helpers:TextBlockExtensions.AutoToolTipIfTrimmed="True" />
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
