@@ -42,7 +42,7 @@ namespace ShowStasher.Helpers
             "x264", "x265", "HEVC", "AVC", "H.264", "H.265", "10bit", "8bit",
 
             // Audio Formats
-            "DDP5.1", "DDP5.1", "DD5.1", "AAC","AAC2.0", "TrueHD", "Atmos", "Opus", "DTS-HD", "MA", "FLAC", "MP3", "OGG",
+           "5.1", "DDP5.1", "DDP5.1", "DD5.1", "AAC","AAC2.0", "TrueHD", "Atmos", "Opus", "DTS-HD", "MA", "FLAC", "MP3", "OGG",
 
             // Miscellaneous
             "YIFY", "RARBG", "PSA", "GalaxyRG", "Joy", "Subbed", "SUBBED", "SUB ","Dubbed", "DUBBED", "DUB", "Dual Audio", "Multi Sub", "Subs", "FanDub", "FanSub", "EngDub", "JapDub", "CMRG","UHD", "IAMABLE", "VXT", "FLUX", "DLWP", "REMASTERED",

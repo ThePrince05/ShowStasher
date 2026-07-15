@@ -38,6 +38,26 @@ namespace ShowStasher.MVVM.ViewModels
         [ObservableProperty] private int progress;
         [ObservableProperty] private bool isBusy;
 
+        // UI Bindings for the button
+        [ObservableProperty] private System.Windows.Media.Brush actionButtonColor = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF3B82F6"); // Default Blue
+        [ObservableProperty] private string actionButtonText = "ORGANIZE FILES";
+        [ObservableProperty] private string actionIconPath = "/Assets/SVG/play.svg";
+
+        // State trackers
+        // State trackers
+        private bool _isPaused;
+        public bool IsPaused
+        {
+            get => _isPaused;
+            set => SetProperty(ref _isPaused, value);
+        }
+
+        private bool _isOrganizing;
+        public bool IsOrganizing
+        {
+            get => _isOrganizing;
+            set => SetProperty(ref _isOrganizing, value);
+        }
         public ObservableCollection<LogEntry> LogMessages { get; } = new();
         public ObservableCollection<LogEntry> SelectedLogMessages { get; } = new();
 
@@ -155,9 +175,32 @@ namespace ShowStasher.MVVM.ViewModels
 
 
 
-        [RelayCommand]
+        [RelayCommand(AllowConcurrentExecutions = true )]
         private async Task PreviewAndOrganizeAsync()
         {
+            // 1. If already organizing, toggle Pause/Resume
+            if (IsOrganizing)
+            {
+                IsPaused = !IsPaused;
+                if (IsPaused)
+                {
+                    ActionButtonText = "RESUME TRANSFER";
+                    ActionButtonColor = (SolidColorBrush)new BrushConverter().ConvertFrom("#34D399"); // Green for resume
+                    ActionIconPath = "/Assets/SVG/play.svg";
+                    SetStatusMessage("Transfer paused...");
+                    Log("Organization paused.", AppLogLevel.Warning);
+                }
+                else
+                {
+                    ActionButtonText = "PAUSE TRANSFER";
+                    ActionButtonColor = (SolidColorBrush)new BrushConverter().ConvertFrom("#FFBE00"); // Yellow for pause
+                    ActionIconPath = "/Assets/SVG/pause.svg";
+                    SetStatusMessage("Organizing selected files...");
+                    Log("Organization resumed.", AppLogLevel.Action);
+                }
+                return;
+            }
+
             if (string.IsNullOrEmpty(SourcePath) || string.IsNullOrEmpty(DestinationPath))
             {
                 SetStatusMessage("Please select both source and destination folders.");
@@ -174,16 +217,15 @@ namespace ShowStasher.MVVM.ViewModels
             {
                 var previewItems = await _fileOrganizerService.GetDryRunTreeAsync(SourcePath, IsOfflineMode);
 
-                // Add this check to prevent the dialog from opening if there are no files
                 if (previewItems == null || previewItems.Count == 0)
                 {
                     SetStatusMessage("No files to organize.");
                     Log("No valid files were found in the selected source folder.", AppLogLevel.Warning);
-                    return; // Exit early
+                    IsBusy = false;
+                    return;
                 }
 
                 var previewViewModel = new PreviewViewModel();
-
                 previewViewModel.RootItems.Clear();
                 foreach (var item in previewItems)
                     previewViewModel.RootItems.Add(item);
@@ -197,17 +239,12 @@ namespace ShowStasher.MVVM.ViewModels
                 previewViewModel.RequestClose = () => dialog.Close();
 
                 var tcs = new TaskCompletionSource<IList<PreviewItem>>();
-
                 previewViewModel.OnConfirm = _ =>
                 {
                     var checkedFiles = previewViewModel.GetCheckedFiles(previewViewModel.RootItems);
                     tcs.TrySetResult(checkedFiles);
                 };
-
-                previewViewModel.OnCancel = () =>
-                {
-                    tcs.TrySetResult(new List<PreviewItem>());
-                };
+                previewViewModel.OnCancel = () => tcs.TrySetResult(new List<PreviewItem>());
 
                 dialog.ShowDialog();
                 var selectedFilesToOrganize = await tcs.Task;
@@ -216,6 +253,7 @@ namespace ShowStasher.MVVM.ViewModels
                 {
                     SetStatusMessage("Organization canceled.");
                     Log("Organization canceled by user (no files selected).", AppLogLevel.Warning);
+                    IsBusy = false;
                     return;
                 }
 
@@ -224,8 +262,16 @@ namespace ShowStasher.MVVM.ViewModels
 
                 var progressReporter = new Progress<int>(percent => Progress = percent);
 
+                // 2. Set Active Transfer State & Button Visuals
+                IsOrganizing = true;
+                IsPaused = false;
+                ActionButtonText = "PAUSE TRANSFER";
+                ActionButtonColor = (SolidColorBrush)new BrushConverter().ConvertFrom("#EAB308"); // Yellow
+                ActionIconPath = "/Assets/SVG/pause.svg";
+
+                // Pass the CheckPauseAsync method into the service
                 await _fileOrganizerService.OrganizeFilesAsync(
-                    selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter);
+                    selectedFilesToOrganize, DestinationPath, IsOfflineMode, progressReporter, CheckPauseAsync);
 
                 SetStatusMessage("Done!");
                 Log("Finished organizing selected files.", AppLogLevel.Success);
@@ -237,7 +283,13 @@ namespace ShowStasher.MVVM.ViewModels
             }
             finally
             {
+                // 3. Reset state and button visuals when finished
                 IsBusy = false;
+                IsOrganizing = false;
+                IsPaused = false;
+                ActionButtonText = "ORGANIZE FILES";
+                ActionButtonColor = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF3B82F6"); // Default Blue
+                ActionIconPath = "/Assets/SVG/play.svg";
             }
         }
 
@@ -263,7 +315,14 @@ namespace ShowStasher.MVVM.ViewModels
 
             window.Show();
         }
-
+        // Method to hold the loop in the service
+        private async Task CheckPauseAsync()
+        {
+            while (IsPaused)
+            {
+                await Task.Delay(250); // Check every 250ms if we should resume
+            }
+        }
         private void InitializeServices(string tmdbApiKey)
         {
             var cacheService = new SqliteDbService(Log);

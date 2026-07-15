@@ -34,10 +34,11 @@ namespace ShowStasher.Services
         }
 
         public async Task OrganizeFilesAsync(
-     IEnumerable<PreviewItem> selectedItems,
-     string destinationFolder,
-     bool isOfflineMode,
-     IProgress<int>? progress = null)
+             IEnumerable<PreviewItem> selectedItems,
+             string destinationFolder,
+             bool isOfflineMode,
+             IProgress<int>? progress = null,
+             Func<Task>? pauseCheck = null)
         {
             var selectedFiles = selectedItems
                 .SelectMany(item => GetAllFiles(item))
@@ -63,6 +64,12 @@ namespace ShowStasher.Services
             {
                 foreach (var file in selectedFiles)
                 {
+                    // 2. ADD the pause check right at the start of the loop
+                    if (pauseCheck != null)
+                    {
+                        await pauseCheck();
+                    }
+
                     try
                     {
                         var parsed = FilenameParser.Parse(file);
@@ -122,7 +129,7 @@ namespace ShowStasher.Services
                             _log($"Organizing movie: {metadata.Title}", AppLogLevel.Action);
                         }
 
-                        await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode);
+                        await MoveAndOrganizeAsync(file, metadata, destinationFolder, isOfflineMode, pauseCheck);
                     }
                     catch (Exception ex)
                     {
@@ -328,8 +335,8 @@ namespace ShowStasher.Services
 
 
 
-        private async Task MoveAndOrganizeAsync(string filePath, MediaMetadata metadata, string destinationRoot, bool isOfflineMode)
-        {
+        private async Task MoveAndOrganizeAsync(string filePath, MediaMetadata metadata, string destinationRoot, bool isOfflineMode, Func<Task>? pauseCheck = null) 
+        { 
             // Removed debug log for organizing file using metadata
             string targetFolder = GetTargetFolder(destinationRoot, metadata, metadata.Type, isOfflineMode);
             Directory.CreateDirectory(targetFolder);
@@ -350,10 +357,14 @@ namespace ShowStasher.Services
             // Inside MoveAndOrganizeAsync: Find the block where the file is moved and update the method call
             if (!File.Exists(newFilePath))
             {
-                await Task.Run(() => File.Move(filePath, newFilePath));
+                // Replace the standard File.Move with a chunked copy
+                await CopyFileWithPauseAsync(filePath, newFilePath, pauseCheck);
+
+                // Once the copy is complete, delete the original file to simulate a "Move"
+                File.Delete(filePath);
+
                 _log($"Moved file:\nFROM: {filePath}\nTO:   {newFilePath}", AppLogLevel.Success);
 
-                // 🌟 FIX: Add 'metadata' as the third parameter here
                 await LogFileMoveToHistoryAsync(filePath, newFilePath, metadata);
             }
             else
@@ -365,7 +376,26 @@ namespace ShowStasher.Services
             await SavePosterAsync(metadataRootFolder, metadata, isOfflineMode);
         }
 
+        private async Task CopyFileWithPauseAsync(string source, string destination, Func<Task>? pauseCheck)
+        {
+            const int bufferSize = 81920; // 80 KB chunks
+            using FileStream sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true);
+            using FileStream destinationStream = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize, true);
 
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+
+            while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                // 🌟 Check if the user paused the transfer before writing the next chunk
+                if (pauseCheck != null)
+                {
+                    await pauseCheck();
+                }
+
+                await destinationStream.WriteAsync(buffer, 0, bytesRead);
+            }
+        }
 
         // 1. Update this method to accept the metadata object
         private async Task LogFileMoveToHistoryAsync(string originalFilePath, string newFilePath, MediaMetadata metadata)
